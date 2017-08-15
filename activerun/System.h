@@ -60,7 +60,7 @@ public:
     std::vector<double>& add_attr(const std::string& name) {
         atom_attributes.push_back(std::vector<double>());
         atom_attributes.back().resize(atom_num);
-        attribute_names[name] = atom_attributes.size() - 1;
+        attribute_names[name] = (int)atom_attributes.size() - 1;
         return atom_attributes.back();
     }
     void set_name(const std::string& name, int index) {

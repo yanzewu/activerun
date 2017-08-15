@@ -10,8 +10,9 @@
 #include <numeric>
 
 #include "threadpool.h"
-
+#include "dict.h"
 #include "mathutil.h"
+
 #include "System.h"
 #include "Context.h"
 
@@ -25,7 +26,7 @@ public:
     bool calculate_pressure;
     bool calculate_energy;
 
-       Force(bool is_direct, bool is_paired) : is_direct(is_direct), is_paired(is_paired) {
+    Force(bool is_direct, bool is_paired) : is_direct(is_direct), is_paired(is_paired) {
 
     }
 };
@@ -51,17 +52,17 @@ public:
 
 	~BrownianForce();
 
-	void init(const InputParameter& input_params, System& system);
+	void init(const Dict&, System&);
 
-	void update_ahead(State& state, std::vector<Vec>& force_buffer);
+	void update_ahead(State&, std::vector<Vec>& force_buffer);
 
-	void update(const State& state, std::vector<Vec>& force_buffer);
+	void update(const State&, std::vector<Vec>& force_buffer);
 
-	double compute_pressure(const State& state, const std::vector<Vec>& force);
+	double compute_pressure(const State&, const std::vector<Vec>& force);
 
-	double compute_energy(const State& state);
+	double compute_energy(const State&);
 
-	void update_cache(const System& system, const Context& context);
+	void update_cache(const System&, const Context&);
 };
 
 
@@ -232,7 +233,7 @@ public:
 
 	MorseForce();
 
-	void init(const InputParameter&, const System&);
+	void init(const Dict&, const System&);
 
 	// initialize parallel components. must called after init.
 	void init_mpi(int thread_count);
@@ -259,7 +260,7 @@ private:
 	void update_column(int i, const State*, const PBCInfo*, const NeighbourList*, std::vector<size_t>* neigh_cache, std::vector<Vec>* force_cache);
 
 	// calculate a pair
-	void update_pair(int id1, int id2, const Vec& d, const State&, std::vector<Vec>& force_cache);
+	void update_pair(size_t id1, size_t id2, const Vec& d, const State&, std::vector<Vec>& force_cache);
 
 	double pair_force_div_r(double r, double exp_cache);
 

@@ -6,6 +6,7 @@
 #include "System.h"
 #include "neighlist.h"
 #include "pbc.h"
+#include "threadpool.h"
 
 struct Context {
 	double timestep;
@@ -16,10 +17,17 @@ struct Context {
 	PBCInfo pbc;
 
 	std::vector<std::vector<Vec> > force_buffer;	// buffer for each force
+
 	std::vector<int> thread_num;					// threads for each force
+	FixedThreadPool pool;
 
 	Context() : neigh_list(nullptr) {
 
+	}
+
+	void init_timestep(const Dict& param) {
+		timestep = param.at("timestep");
+		total_steps = (size_t)param.at("steps");
 	}
 
 	void init_force_buffer(const System& system, int force_num) {
@@ -40,8 +48,11 @@ struct Context {
 	void init_multicore(int thread_count, int pair_force_idx) {
 		thread_num.resize(force_buffer.size());
 		for (size_t i = 0; i < thread_num.size(); i++) {
-			if (i == pair_force_idx)thread_num[i] = thread_count - thread_num.size();
-			else thread_num[i] = 1;
+			if (i == pair_force_idx)thread_num[i] = thread_count - 1;
+			else thread_num[i] = 0;
+		}
+		if (thread_count > 1) {
+			pool.init(thread_count - 1);
 		}
 	}
 

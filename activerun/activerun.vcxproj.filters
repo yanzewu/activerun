@@ -39,6 +39,9 @@
     <ClCompile Include="MorseForce.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Dumper.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="arrayutil.h">
@@ -57,9 +60,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="vec.h">
-      <Filter>util</Filter>
-    </ClInclude>
-    <ClInclude Include="errors.h">
       <Filter>util</Filter>
     </ClInclude>
     <ClInclude Include="includes.h">
@@ -90,6 +90,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="activerun.h">
+      <Filter>util</Filter>
+    </ClInclude>
+    <ClInclude Include="dict.h">
       <Filter>util</Filter>
     </ClInclude>
   </ItemGroup>

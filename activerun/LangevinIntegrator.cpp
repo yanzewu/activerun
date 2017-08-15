@@ -10,9 +10,10 @@ LangevinIntegrator::LangevinIntegrator() :
 
 
 
-void LangevinIntegrator::init(const System& system, const Context& context)
+void LangevinIntegrator::init(const Dict& params, const System& system, const Context& context)
 
 {
+	compute_temperature = (bool)params.get("compute_temp", 0.0);
 	inv_viscosity_cache = system.get_attr("zeta");
 	for (auto& fb : force_buffer) {
 		fb.resize(system.atom_num);

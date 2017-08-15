@@ -9,7 +9,6 @@
 #include "Context.h"
 #include "Integrator.h"
 #include "thermostat.h"
-#include "errors.h"
 
 
 #endif // !ACTIVERUN_H

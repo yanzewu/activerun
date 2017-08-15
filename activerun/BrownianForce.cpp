@@ -9,8 +9,8 @@ BrownianForce::BrownianForce() : Force(false, false)
 BrownianForce::~BrownianForce() {
 }
 
-void BrownianForce::init(const InputParameter& input_params, System& system) {
-	temperature = input_params.kT;
+void BrownianForce::init(const Dict& params, System& system) {
+	temperature = params.get("temp", 1.0);
 
 	group_cache.resize(system.atom_num);
 	force_coeff_cache.resize(system.atom_num);
@@ -22,7 +22,7 @@ void BrownianForce::init(const InputParameter& input_params, System& system) {
 		system.set_name("size", 2);
 
 		for (size_t i = 0; i < system.atom_num; i++) {
-			zeta[i] = 6 * M_PI * input_params.viscosity * system.atom_attributes[2][i];
+			zeta[i] = 6 * M_PI * params.get("neta", 1.0) * system.atom_attributes[2][i];
 		}
 	}
 

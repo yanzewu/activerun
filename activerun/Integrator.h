@@ -15,7 +15,7 @@ public:
 	LangevinIntegrator();
 
 	// must be called after construct
-	void init(const System& system, const Context& context);
+	void init(const Dict& dict, const System& system, const Context& context);
 
 	// perform simple update (require smaller timestep)
 	void update(State& state, const Context& context);

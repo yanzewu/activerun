@@ -115,6 +115,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="BrownianForce.cpp" />
+    <ClCompile Include="Dumper.cpp" />
     <ClCompile Include="Input.cpp" />
     <ClCompile Include="LangevinIntegrator.cpp" />
     <ClCompile Include="main.cpp" />
@@ -125,9 +126,9 @@
     <ClInclude Include="activerun.h" />
     <ClInclude Include="arrayutil.h" />
     <ClInclude Include="Context.h" />
+    <ClInclude Include="dict.h" />
     <ClInclude Include="dimension.h" />
     <ClInclude Include="Dumper.h" />
-    <ClInclude Include="errors.h" />
     <ClInclude Include="Force.h" />
     <ClInclude Include="includes.h" />
     <ClInclude Include="Input.h" />

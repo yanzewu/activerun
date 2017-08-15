@@ -5,20 +5,27 @@ MorseForce::MorseForce() : Force(false, true) {
 
 }
 
-void MorseForce::init(const InputParameter& input_params, const System& system) {
+void MorseForce::init(const Dict& params, const System& system) {
 
-	kappa = input_params.kappa;
-	Um = input_params.Um;
+	/* Necessary Arguments */
 
-	cutoff_relative = 1.0 + input_params.Rg * 2;
-	cutoff_global = *std::max_element(system.get_attr("size").begin(), system.get_attr("size").end()) * cutoff_relative;
-	cutoff_global2 = cutoff_global * cutoff_global;
+	kappa = params.at("kappa");
+	Um = params.at("Um");
+
+	cutoff_relative = params.get("cutoff", 1.25);
+	calculate_energy = (bool)params.get("energy", 0);
 }
 
 void MorseForce::init_mpi(int thread_count) {
 	pool_size = thread_count;
-	force_cache.resize(pool_size);
-	neigh_cache.resize(pool_size);
+	if (pool_size > 0) {
+		force_cache.resize(pool_size);
+		neigh_cache.resize(pool_size);
+	}
+	else {
+		force_cache.resize(1);
+		neigh_cache.resize(1);
+	}
 
 	for (auto& nc : neigh_cache) {
 		nc.reserve(64);
@@ -37,7 +44,7 @@ void MorseForce::update(FixedThreadPool& pool, const State& state, const PBCInfo
 		memset(&fc[0], 0, sizeof(Vec)*fc.size());
 	}
 
-	if (pool_size > 1) { // using parallel
+	if (pool_size >= 1) { // using parallel
 
 		for (int i = 0; i < pool_size; i++) {
 			pool.submit(std::bind(&MorseForce::update_batch,
@@ -113,7 +120,7 @@ void MorseForce::update_column(int i, const State* state, const PBCInfo* pbc, co
 
 }
 
-void MorseForce::update_pair(int id1, int id2, const Vec2& d, const State& state, std::vector<Vec>& F) {
+void MorseForce::update_pair(size_t id1, size_t id2, const Vec& d, const State& state, std::vector<Vec>& F) {
 	
 	double r2 = d.norm2();
 	if (r2 > cutoff_global2)return;
@@ -134,7 +141,7 @@ void MorseForce::update_pair(int id1, int id2, const Vec2& d, const State& state
 	fprintf(stderr, "Radius is %.4f and %.4f\n", atom_radius_cache[id1], atom_radius_cache[id2]);
 	//			throw std::out_of_range("Force too large");
 	}*/
-	Vec2 f_temp = d * pair_force_div_r(r, exp_cache) / r;
+	Vec f_temp = d * pair_force_div_r(r, exp_cache) / r;
 	F[id1] -= f_temp;
 	F[id2] += f_temp;
 
@@ -150,6 +157,11 @@ double MorseForce::pair_energy(double r, double exp_cache) {
 }
 
 void MorseForce::update_cache(const System& system, const Context& context) {
+
+	cutoff_global = *std::max_element(system.get_attr("size").begin(), system.get_attr("size").end()) * cutoff_relative;
+	cutoff_global2 = cutoff_global * cutoff_global;
+
+
 	atom_radius_cache = system.get_attr("size");
 	for (size_t i = 0; i < atom_radius_cache.size(); i++) {
 		atom_radius_cache[i] *= 0.5;

@@ -3,11 +3,9 @@
 #ifndef ACTIVERUN_DUMPER
 #define ACTIVERUN_DUMPER
 
-
-
-#include <stdio.h>
-#include <vector>
+#include "includes.h"
 #include "System.h"
+#include "Context.h"
 
 class Dumper {
 public:
@@ -16,10 +14,13 @@ public:
     Dumper(const char* filename) {
         ofile = fopen(filename, "w");
         if (!ofile) {
-            printf("Cannot open %s", filename);
-            // throw;
+            fprintf(stderr, "Cannot open %s", filename);
         }
     }
+
+	Dumper(FILE* file) : ofile(file) {
+
+	}
 
     void write(const char* str) {
         fprintf(ofile, str);
@@ -37,44 +38,28 @@ public:
 
     }
 
-
-    void dump(const System& system, const State& state, int step) {
-        fprintf(ofile, "ITEM: TIMESTEP\n");
-        fprintf(ofile, "%d\n", step);
-        fprintf(ofile, "ITEM: NUMBER OF ATOMS\n");
-        fprintf(ofile, "%i\n", system.atom_num);
-        fprintf(ofile, "ITEM: BOX BOUNDS\n");
-        fprintf(ofile, "0 %f\n", system.box[0]);
-        fprintf(ofile, "0 %f\n", system.box[1]);
-        fprintf(ofile, "-0.25 0.25\n");
-        fprintf(ofile, "ITEM: ATOMS id mol type x y z\n");
-        for (int i = 0; i < system.atom_num; ++i) {
-            fprintf(ofile, "%i %i %i %f %f 0\n", 
-                i + 1, 
-                system.atom_group[i],
-                system.atom_type[i], 
-                state.pos[i][0], 
-                state.pos[i][1]);
-        }
-    }
+	void dump(const System& system, const State& state, int step);
 };
 
 class LineDumper : public Dumper {
 public:
-    LineDumper(const char* filename, const std::vector<std::string>& dump_names) : 
+    LineDumper(const char* filename, const std::vector<std::string>& dump_names, bool with_output=false) : 
         Dumper(filename),
-        dump_names(dump_names) {
+        dump_names(dump_names),
+		with_output(with_output)
+		{
 
     }
 
-    void dump(const std::map<std::string, double> content, const size_t& step) {
-        fprintf(ofile, "\n%zd", step);
-        for (const auto& name : dump_names) {
-            fprintf(ofile, "\t%f", content.at(name));
-        }
-    }
+	void dump_head();
+
+	void dump(const std::vector<double>& value, const size_t& step);
     
     std::vector<std::string> dump_names;
+	bool with_output;
 };
+
+// used in error handling
+void dump_snapshot(const State& state, const Context& context);
 
 #endif // !ACTIVERUN_DUMPER

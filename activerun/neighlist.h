@@ -49,11 +49,11 @@ public:
     }
 
 	void synchronize_ghost() {
-		for (size_t i = 1; i <= box_num[0]; i++) {
+		for (int i = 1; i <= box_num[0]; i++) {
 			at(i, 0) = at(i, box_num[1]);
 			at(i, box_num[1] + 1) = at(i, 1);
 		}
-		for (size_t i = 1; i <= box_num[1]; i++) {
+		for (int i = 1; i <= box_num[1]; i++) {
 			at(0, i) = at(box_num[0], i);
 			at(box_num[0] + 1, i) = at(1, i);
 		}

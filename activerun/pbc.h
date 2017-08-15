@@ -59,7 +59,7 @@ public:
 #endif // THREE_DIMENSION
 				) {
 				
-				fprintf(stderr, "Atom %d missing at %g, %g\n", &p - &pos[0], p[0], p[1]);
+				fprintf(stderr, "Atom %d missing at %g, %g\n", (int)(&p - &pos[0]), p[0], p[1]);
 				throw std::out_of_range("Atom missing");
 
 			}
