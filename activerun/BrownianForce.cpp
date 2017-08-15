@@ -46,13 +46,13 @@ void BrownianForce::update_ahead(State& state, std::vector<Vec>& force_buffer) {
 // update
 void BrownianForce::update(const State& state, std::vector<Vec>& force_buffer) {
 
-	for (auto& rc : random_cache) {
-		rc[0] = rand_uniform() - 0.5;
-		rc[1] = rand_uniform() - 0.5;
+	
+	for (auto& rc : random_cache) {	/* If you want to be consistent with history, reverse the order */
 #ifdef THREE_DIMENSION
 		rc[2] = rand_uniform() - 0.5;
 #endif // THREE_DIMENSION
-
+		rc[1] = rand_uniform() - 0.5;
+		rc[0] = rand_uniform() - 0.5;
 	}
 
 	for (size_t i = 0; i < force_buffer.size(); ++i) {

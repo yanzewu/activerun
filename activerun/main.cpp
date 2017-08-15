@@ -141,7 +141,7 @@ int main(int argc, char* argv[]) {
 		}
 
 		force_morse.mp_update(context.pool, state, context.pbc, *context.neigh_list);
-        force_brown.mp_update(context.pool, state, context.force_buffer[0]);
+        force_brown.update(state, context.force_buffer[0]);
         if (has_swim && context.current_step >= input.swimstart) {
 			force_swim.update(state, context.force_buffer[1]);
         }
