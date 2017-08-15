@@ -14,7 +14,7 @@ int main(int argc, char* argv[]) {
 	if (input.read_input(argv[1])) {
 		return 1;
 	}
-    const char* data_filename = "data.gel";
+    const char* data_filename = argc > 2 ? argv[2] : "data.gel" ;
 	const char* dump_filename = "outputconfig.lammpstrj";
 
 	Dict fix_brownian_param = {
@@ -57,26 +57,35 @@ int main(int argc, char* argv[]) {
     
     SwimForce force_swim;
     bool has_swim = std::count(system.atom_type.begin(), system.atom_type.end(), 1) > 0;
-    if (has_swim) {
+	if (has_swim) {
         force_swim.init(input, system);
-		force_swim.update_cache(system, context);
-    }
+	}
 
     MorseForce force_morse;
 	force_morse.init(pair_param, system);
+
+	// integrator+
 
 	context.init_timestep(time_param);
     context.init_pbc(system, true);
 	double max_atom_size = *std::max_element(system.get_attr("size").begin(), system.get_attr("size").end());
     context.init_neighlist(system.box, input.mincellL * std::max(force_morse.cutoff_global, max_atom_size));
 
-	context.init_multicore(input.np, (int)mpi_param.get("np", 1.0));
-	force_morse.init_mpi(context.thread_num[2]);
-
-    // prepare integrator
-
     LangevinIntegrator integrator;
     integrator.init(integrator_param, system, context);
+
+	// mpi
+
+	context.init_multicore((int)mpi_param.get("np", 1.0), 2);
+	if (has_swim) {
+		context.thread_num[2]--;
+		context.thread_num[0] = 1;
+	}
+
+	force_brown.init_mpi(context.thread_num[0]);
+	force_morse.init_mpi(context.thread_num[2]);
+    // prepare integrator
+
 
     // prepare runtime
 
@@ -97,10 +106,15 @@ int main(int argc, char* argv[]) {
     integrator.update_cache(context);
 	thermostat.update_cache(system);
     force_brown.update_cache(system, context);
+    if (has_swim) {
+		force_swim.update_cache(system, context);
+    }
     force_morse.update_cache(system, context);
 	if (has_swim) {
 		force_swim.update_cache(system, context);
 	}
+
+	printf("Start running session...\n\n");
 
     TrajDumper trajdumper(dump_filename);
     trajdumper.dump(system, state, 0);
@@ -124,15 +138,12 @@ int main(int argc, char* argv[]) {
 			memset(&fb[0], 0, sizeof(Vec) * fb.size());
 		}
 
-	//	pool.submit(std::bind(&BrownianForce::update, &force_brown, std::ref(state), std::ref(context.force_buffer[0])));
-
-		force_morse.update(context.pool, state, context.pbc, *context.neigh_list);
-		context.pool.start_all();
-        force_brown.update(state, context.force_buffer[0]);
+		force_morse.mp_update(context.pool, state, context.pbc, *context.neigh_list);
+        force_brown.mp_update(context.pool, state, context.force_buffer[0]);
         if (has_swim && context.current_step >= input.swimstart) {
-	//		pool.submit(std::bind(&SwimForce::update, &force_swim, std::ref(state), std::ref(context.force_buffer[1])));
-            force_swim.update(state, context.force_buffer[1]);
+			force_swim.update(state, context.force_buffer[1]);
         }
+	//	context.pool.start_all();
 		context.pool.wait();
 		force_morse.update_later(context.force_buffer[2]);
 

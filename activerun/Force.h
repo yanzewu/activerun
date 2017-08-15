@@ -54,9 +54,13 @@ public:
 
 	void init(const Dict&, System&);
 
+	void init_mpi(int thread_count);
+
 	void update_ahead(State&, std::vector<Vec>& force_buffer);
 
 	void update(const State&, std::vector<Vec>& force_buffer);
+
+	void mp_update(FixedThreadPool&, const State& state, std::vector<Vec>& force_buffer);
 
 	double compute_pressure(const State&, const std::vector<Vec>& force);
 
@@ -132,7 +136,7 @@ public:
     void update(const State& state, std::vector<Vec2>& force_buffer) {
         for (int i = 0; i < force_buffer.size(); ++i) {
             if (!group_cache[i]) continue;
-            angular_momentum_cache[i] = torque_coeff_cache[i] * (fRand(-0.5, 0.5));
+            angular_momentum_cache[i] = torque_coeff_cache[i] * (rand_uniform() - 0.5);
         }
 
         for (int i = 0; i < force_buffer.size(); i++) {
@@ -241,7 +245,10 @@ public:
 	void update_ahead(State&, std::vector<Vec>&);
 
 	// update, submit job in parallel
-	void update(FixedThreadPool&, const State&, const PBCInfo&, const NeighbourList&);
+	void mp_update(FixedThreadPool&, const State&, const PBCInfo&, const NeighbourList&);
+
+	// update in main thread
+	void update(const State&, const PBCInfo&, const NeighbourList&);
 
 	// collect and wait job in parallel
 	void update_later(std::vector<Vec>& F);

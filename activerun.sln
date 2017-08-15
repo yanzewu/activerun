@@ -5,6 +5,11 @@ VisualStudioVersion = 15.0.26430.16
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "activerun", "activerun\activerun.vcxproj", "{C606C801-49EB-4A6C-9E34-21E92BAA721A}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{F34B80AD-3FC3-4197-A8F5-3C1CAB61511D}"
+	ProjectSection(SolutionItems) = preProject
+		makefile = makefile
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|ARM = Debug|ARM

@@ -11,10 +11,20 @@ LangevinIntegrator::LangevinIntegrator() :
 
 
 void LangevinIntegrator::init(const Dict& params, const System& system, const Context& context)
-
 {
+	printf("\nInitializing integrator\n\n");
+
 	compute_temperature = (bool)params.get("compute_temp", 0.0);
-	inv_viscosity_cache = system.get_attr("zeta");
+	printf(compute_temperature ? "Using velocity cache for temperature\n" : "No temperature computation\n");
+
+	try {
+		inv_viscosity_cache = system.get_attr("zeta");
+
+	}
+	catch (const std::out_of_range&) {
+		printf("Error: Damp cache not found\n");
+		throw;
+	}
 	for (auto& fb : force_buffer) {
 		fb.resize(system.atom_num);
 	}

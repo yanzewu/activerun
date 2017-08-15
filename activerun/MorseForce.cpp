@@ -7,13 +7,23 @@ MorseForce::MorseForce() : Force(false, true) {
 
 void MorseForce::init(const Dict& params, const System& system) {
 
-	/* Necessary Arguments */
+	printf("\nInitializing Morse potential\n\n");
 
-	kappa = params.at("kappa");
-	Um = params.at("Um");
+	try {
+		kappa = params.at("kappa");
+		Um = params.at("Um");
+	}
+	catch (const std::out_of_range&) {
+		printf("Error: kappa or Um not found\n");
+		throw;
+	}
 
 	cutoff_relative = params.get("cutoff", 1.25);
+
+	printf("kappa=%.5g\nUm=%.5g\ncutoff=%.4f\n", kappa, Um, cutoff_relative);
+
 	calculate_energy = (bool)params.get("energy", 0);
+	printf(calculate_energy ? "Using energy cache\n" : "No energy cache\n");
 }
 
 void MorseForce::init_mpi(int thread_count) {
@@ -37,7 +47,7 @@ void MorseForce::update_ahead(State& state, std::vector<Vec>& F) {
 
 }
 
-void MorseForce::update(FixedThreadPool& pool, const State& state, const PBCInfo& pbc, const NeighbourList& neigh_list) {
+void MorseForce::mp_update(FixedThreadPool& pool, const State& state, const PBCInfo& pbc, const NeighbourList& neigh_list) {
 	energy_cache = 0.0;
 
 	for (auto& fc : force_cache) {
@@ -50,13 +60,17 @@ void MorseForce::update(FixedThreadPool& pool, const State& state, const PBCInfo
 			pool.submit(std::bind(&MorseForce::update_batch,
 				this,
 				1 + neigh_list.box_num[0] * i / pool_size, 1 + neigh_list.box_num[0] * (i + 1) / pool_size,
-				&state, &pbc, &neigh_list, &neigh_cache[i], &force_cache[i]), false);
+				&state, &pbc, &neigh_list, &neigh_cache[i], &force_cache[i]), true);
 		}
 	}
 	else {
-		update_batch(1, neigh_list.box_num[0] + 1, 
-			&state, &pbc, &neigh_list, &neigh_cache[0], &force_cache[0]);
+		update(state, pbc, neigh_list);
 	}
+}
+
+void MorseForce::update(const State& state, const PBCInfo& pbc, const NeighbourList& neigh_list) {
+	update_batch(1, neigh_list.box_num[0] + 1,
+		&state, &pbc, &neigh_list, &neigh_cache[0], &force_cache[0]);
 }
 
 void MorseForce::update_later(std::vector<Vec2>& F) {

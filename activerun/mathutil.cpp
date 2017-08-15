@@ -13,8 +13,8 @@ inline int fast_rand() {
 	return (seed >> 16) & 0x7fff;
 }
 
-#define MY_RANDOM_MAX 0x7fff
+#define MY_RANDOM_MAX RAND_MAX
 
 double rand_uniform() {
-	return (double)fast_rand() / MY_RANDOM_MAX;
+	return (double)rand() / MY_RANDOM_MAX;
 }

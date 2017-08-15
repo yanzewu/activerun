@@ -7,16 +7,26 @@
 #include "vec.h"
 #include <vector>
 
+#ifndef Vec
 #define Vec Vec2
+#endif // !Vec
+
+#ifndef Vecd
 #define Vecd Vec2d
+#endif // !Vecd
+
 
 class NeighbourList {
 public:
 
     NeighbourList(const Vec& box, double cutoff, bool using_ghost=false) {
+		printf("\nInitializing celllist\n\n");
+
         box_num = Vecd(box / cutoff);
+		printf("Total %d x %d boxes\n", box_num[0], box_num[1]);
 
         unit = box / box_num.to_float();
+		printf("Box size=%.4f, %.4f\n", unit[0], unit[1]);
 
 		this->using_ghost = using_ghost;
 
@@ -26,6 +36,7 @@ public:
 			box_num_real = box_num;
 		}
 		else {
+			printf("Using ghost\n");
 			cells.resize((box_num[0] + 2) * (box_num[1] + 2));
 			box_num_real = Vecd(box_num[0] + 2, box_num[1] + 2);
 		}
