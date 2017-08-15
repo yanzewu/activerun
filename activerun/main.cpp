@@ -8,6 +8,8 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
+	srand(0);
+
     // prepare system
 
     InputParameter input;
