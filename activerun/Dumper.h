@@ -38,7 +38,7 @@ public:
 
     }
 
-	void dump(const System& system, const State& state, int step);
+	void dump(const System& system, const State& state, size_t step);
 };
 
 class LineDumper : public Dumper {
@@ -60,6 +60,6 @@ public:
 };
 
 // used in error handling
-void dump_snapshot(const State& state, const Context& context);
+void dump_snapshot(const State& state, const Context& context, const char* name="snapshot.txt");
 
 #endif // !ACTIVERUN_DUMPER

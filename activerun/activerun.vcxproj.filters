@@ -42,6 +42,9 @@
     <ClCompile Include="Dumper.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="SwimForce.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="arrayutil.h">

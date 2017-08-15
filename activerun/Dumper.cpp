@@ -18,9 +18,9 @@ void foprintf(FILE* file, const char* str, ...) {
 	vprintf(str, args);
 }
 
-void TrajDumper::dump(const System& system, const State& state, int step) {
+void TrajDumper::dump(const System& system, const State& state, size_t step) {
 	fprintf(ofile, "ITEM: TIMESTEP\n");
-	fprintf(ofile, "%d\n", step);
+	fprintf(ofile, "%zd\n", step);
 	fprintf(ofile, "ITEM: NUMBER OF ATOMS\n");
 	fprintf(ofile, "%zd\n", system.atom_num);
 	fprintf(ofile, "ITEM: BOX BOUNDS\n");
@@ -105,7 +105,7 @@ void dump_force(const Context& context, FILE* dumpfile) {
 		fprintf(dumpfile, "%zd", i);
 		for (size_t j = 0; j < context.force_buffer.size(); j++) {
 			sprintf_vec(buffer, context.force_buffer[j][i]);
-			fprintf(dumpfile, "    %s", buffer);
+			fprintf(dumpfile, "       %s", buffer);
 		}
 		fprintf(dumpfile, "\n");
 	}
@@ -124,10 +124,11 @@ void dump_nblist(const NeighbourList& nblist, FILE* dumpfile) {
 		}
 }
 
-void dump_snapshot(const State& state, const Context& context) {
-	FILE* dumpfile = fopen("shapshot.txt", "w");
+void dump_snapshot(const State& state, const Context& context, const char* name) {
+	FILE* dumpfile = fopen(name, "w");
 	dump_pos(state, dumpfile);
 	dump_force(context, dumpfile);
+	dump_nblist(*context.neigh_list, dumpfile);
 	fclose(dumpfile);
-	fprintf(stderr, "shapshot saved to shapshot.txt");
+	fprintf(stderr, "shapshot saved to %s\n", name);
 }

@@ -4,11 +4,9 @@
 int main(int argc, char* argv[]) {
 
     if (argc < 2) {
-        printf("Usage activerun [inputfile]");
+        printf("Usage activerun [inputfile] (datafile)");
         return 1;
     }
-
-	srand(0);
 
     // prepare system
 
@@ -22,6 +20,13 @@ int main(int argc, char* argv[]) {
 	Dict fix_brownian_param = {
 		{"temp", input.kT},
 		{"neta", input.viscosity} };
+	Dict fix_swim_param = {
+		{"swim_temp", input.kT},
+		{"neta", input.viscosity},
+		{"brownian", input.brownrot ? 1.0 : 0.0},
+		{"PeR", input.PeR},
+		{"init_seed", 0.0}
+	};
 	Dict pair_param = {
 		{ "kappa", input.kappa },
 		{ "Um", input.Um },
@@ -60,7 +65,7 @@ int main(int argc, char* argv[]) {
     SwimForce force_swim;
     bool has_swim = std::count(system.atom_type.begin(), system.atom_type.end(), 1) > 0;
 	if (has_swim) {
-        force_swim.init(input, system);
+        force_swim.init(fix_swim_param, system);
 	}
 
     MorseForce force_morse;
@@ -81,13 +86,14 @@ int main(int argc, char* argv[]) {
 	context.init_multicore((int)mpi_param.get("np", 1.0), 2);
 	if (has_swim) {
 		context.thread_num[2]--;
-		context.thread_num[0] = 1;
+		context.thread_num[0] = 0;
 	}
 
 	force_brown.init_mpi(context.thread_num[0]);
+	if (has_swim) {
+		force_swim.init_mpi(context.thread_num[1]);
+	}
 	force_morse.init_mpi(context.thread_num[2]);
-    // prepare integrator
-
 
     // prepare runtime
 
@@ -112,9 +118,6 @@ int main(int argc, char* argv[]) {
 		force_swim.update_cache(system, context);
     }
     force_morse.update_cache(system, context);
-	if (has_swim) {
-		force_swim.update_cache(system, context);
-	}
 
 	printf("Start running session...\n\n");
 
@@ -123,6 +126,8 @@ int main(int argc, char* argv[]) {
 
     LineDumper thermodumper("totalstress.output", {"P_Brown", "P_Swim", "P_Morse", "Temp"}, true);
 	thermodumper.dump_head();
+
+	srand(0);
 
     for (context.current_step = 0; context.current_step < context.total_steps; context.current_step++) {
 
@@ -141,9 +146,9 @@ int main(int argc, char* argv[]) {
 		}
 
 		force_morse.mp_update(context.pool, state, context.pbc, *context.neigh_list);
-        force_brown.update(state, context.force_buffer[0]);
+        force_brown.mp_update(context.pool, state, context.force_buffer[0]);
         if (has_swim && context.current_step >= input.swimstart) {
-			force_swim.update(state, context.force_buffer[1]);
+			force_swim.mp_update(context.pool, state, context.force_buffer[1]);
         }
 	//	context.pool.start_all();
 		context.pool.wait();

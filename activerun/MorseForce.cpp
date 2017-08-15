@@ -1,8 +1,10 @@
 
 #include "Force.h"
 
-MorseForce::MorseForce() : Force(false, true) {
-
+MorseForce::MorseForce() {
+	this->is_direct = false;
+	this->is_paired = true;
+	this->is_potential_force = true;
 }
 
 void MorseForce::init(const Dict& params, const System& system) {

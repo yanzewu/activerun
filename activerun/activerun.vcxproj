@@ -121,6 +121,7 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="mathutil.cpp" />
     <ClCompile Include="MorseForce.cpp" />
+    <ClCompile Include="SwimForce.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="activerun.h" />

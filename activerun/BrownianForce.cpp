@@ -1,9 +1,11 @@
 #include "Force.h"
 
 
-BrownianForce::BrownianForce() : Force(false, false)
+BrownianForce::BrownianForce()
 {
-
+	this->is_direct = false;
+	this->is_paired = false;
+	this->is_potential_force = false;
 }
 
 BrownianForce::~BrownianForce() {
@@ -22,7 +24,7 @@ void BrownianForce::init(const Dict& params, System& system) {
 
 	// zeta = 6 pi eta r^2
 	if (system.attribute_names.find("zeta") == system.attribute_names.end()) {
-		printf("Damp cache not found, buidling...\n");
+		printf("Damp cache not found, building...\n");
 		printf("Viscosity=%.5g\n", params.get("neta", 1.0));
 
 		auto& zeta = system.add_attr("zeta");
@@ -32,7 +34,9 @@ void BrownianForce::init(const Dict& params, System& system) {
 			zeta[i] = 6 * M_PI * params.get("neta", 1.0) * system.atom_attributes[2][i];
 		}
 	}
-
+	else {
+		printf("Using cached damp\n");
+	}
 }
 
 void BrownianForce::init_mpi(int thread_count) {
