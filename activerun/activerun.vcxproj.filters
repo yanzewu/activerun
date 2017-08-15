@@ -36,6 +36,9 @@
     <ClCompile Include="mathutil.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="MorseForce.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="arrayutil.h">

@@ -40,6 +40,8 @@ int InputParameter::read_input(const char* filename) {
 	fscanf(file_params, "%*s%lf", &mincellL); //length of unit cell in cell list normalized by largest interaction length
 	fclose(file_params);
 
+	np = 4;
+
 	if (attraction != 0 && morse == 0)
 		HSrepulsion = 1;
 

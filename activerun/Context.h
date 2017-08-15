@@ -15,7 +15,8 @@ struct Context {
 	NeighbourList* neigh_list;
 	PBCInfo pbc;
 
-	std::vector<std::vector<Vec> > force_buffer;
+	std::vector<std::vector<Vec> > force_buffer;	// buffer for each force
+	std::vector<int> thread_num;					// threads for each force
 
 	Context() : neigh_list(nullptr) {
 
@@ -34,6 +35,14 @@ struct Context {
 
 	void init_neighlist(const Vec& box, double cutoff) {
 		neigh_list = new NeighbourList(box, cutoff, true);
+	}
+
+	void init_multicore(int thread_count, int pair_force_idx) {
+		thread_num.resize(force_buffer.size());
+		for (size_t i = 0; i < thread_num.size(); i++) {
+			if (i == pair_force_idx)thread_num[i] = thread_count - thread_num.size();
+			else thread_num[i] = 1;
+		}
 	}
 
 	~Context() {

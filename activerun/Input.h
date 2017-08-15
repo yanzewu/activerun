@@ -29,6 +29,7 @@ struct InputParameter {
 	double mincellL;
 	double U;
 	double viscosity;
+	int np;
 
 	int read_input(const char* filename);
 };

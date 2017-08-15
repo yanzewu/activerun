@@ -42,7 +42,7 @@ public:
 		condvar_start.notify_all();
 	}
 
-	void submit(std::function<void(void)> func) {
+	void submit(std::function<void(void)> func, bool start_rightnow=true) {
 
 		{
 			std::unique_lock<std::mutex> l(lock_finish);
@@ -52,7 +52,8 @@ public:
 		{
 			std::unique_lock<std::mutex> l(lock_start);
 			job_queue.emplace(std::move(func));
-			condvar_start.notify_one();
+			if (start_rightnow)
+				condvar_start.notify_one();
 		}
 	}
 
@@ -61,6 +62,10 @@ public:
 		while (!interrputed && execute_count > 0) {
 			condvar_finish.wait(l);
 		}
+	}
+
+	void start_all() {
+		condvar_start.notify_all();
 	}
 
 	void start_job(size_t index) {

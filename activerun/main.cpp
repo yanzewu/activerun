@@ -47,12 +47,14 @@ int main(int argc, char* argv[]) {
     MorseForce force_morse;
     force_morse.init(input, system);
 
-
 //    context.timestep = std::min(brown_timescale, swim_timescale) * input.dt;
     context.total_steps = (size_t)(input.stepstR / context.timestep);
     double ave_atom_size = 1.0;
     context.init_neighlist(system.box, input.mincellL * std::max(force_morse.cutoff_global, ave_atom_size));
     context.init_pbc(system, true);
+	context.init_multicore(input.np, 2);
+
+	force_morse.init_mpi(context.thread_num[2]);
 
     // prepare integrator
 
@@ -112,10 +114,10 @@ int main(int argc, char* argv[]) {
 	//		pool.submit(std::bind(&SwimForce::update, &force_swim, std::ref(state), std::ref(context.force_buffer[1])));
             force_swim.update(state, context.force_buffer[1]);
         }
-	//	pool.submit(std::bind(&MorseForce::update, &force_morse, state, std::ref(context.pbc), *context.neigh_list, context.force_buffer[2]));
-		force_morse.update(pool, state, context.pbc, *context.neigh_list, context.force_buffer[2]);
+		force_morse.update(pool, state, context.pbc, *context.neigh_list);
+		pool.start_all();
         force_brown.update(state, context.force_buffer[0]);
-//		pool.wait();
+		pool.wait();
 		force_morse.update_later(context.force_buffer[2]);
 
         integrator.update(state, context);

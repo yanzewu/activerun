@@ -119,6 +119,7 @@
     <ClCompile Include="LangevinIntegrator.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="mathutil.cpp" />
+    <ClCompile Include="MorseForce.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="activerun.h" />
