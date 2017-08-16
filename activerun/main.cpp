@@ -16,6 +16,11 @@ int main(int argc, char* argv[]) {
 	}
     const char* data_filename = argc > 2 ? argv[2] : "data.gel" ;
 	const char* dump_filename = "outputconfig.lammpstrj";
+	char restart_filename[128];
+	strcpy(restart_filename, data_filename);
+	strcat(restart_filename, ".restart");
+
+	bool write_restart = true;
 
 	Dict fix_brownian_param = {
 		{"temp", input.kT},
@@ -169,5 +174,11 @@ int main(int argc, char* argv[]) {
 				context.current_step + 1);
         }
     }
+
+	if (write_restart) {
+		state.write_data(datafile);
+		datafile.write_data(restart_filename);
+	}
+
 	return 0;
 }

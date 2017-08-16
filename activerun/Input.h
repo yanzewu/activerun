@@ -53,6 +53,8 @@ public:
 
 	// Read LAMMPS Data File
 	int read_data(const char*);
+
+	int write_data(const char*);
 };
 
 

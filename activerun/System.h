@@ -20,6 +20,10 @@ public:
     void init(const DataFile& datafile) {
         pos = datafile.pos;
     }
+
+	void write_data(DataFile& datafile) {
+		datafile.pos = pos;
+	}
 };
 
 
