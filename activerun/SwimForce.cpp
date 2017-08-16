@@ -66,7 +66,9 @@ void SwimForce::init(const Dict& params, System& system) {
 }
 
 void SwimForce::init_mpi(int thread_count) {
+	printf("Swim force: ");
 	using_thread = thread_count > 0;
+	printf(using_thread ? "Using thread pool\n" : "Using main thread\n");
 }
 
 void SwimForce::update_ahead(State& state, std::vector<Vec>& F) {

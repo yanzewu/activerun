@@ -142,19 +142,19 @@ public:
 	void update_ahead(State&, std::vector<Vec>&);
 
 	// update, submit job in parallel
-	void mp_update(FixedThreadPool&, const State&, const PBCInfo&, const NeighbourList&);
+	void mp_update(FixedThreadPool&, const State&, const Context&);
 
 	// update in main thread
-	void update(const State&, const PBCInfo&, const NeighbourList&);
+	void update(const State&, const Context&);
 
 	// collect and wait job in parallel
 	void update_later(std::vector<Vec>& F);
 
-	void update_cache(const System& system, const Context& context);
+	void update_cache(const System& system, const Context&);
 
-	double compute_pressure(const State& state);
+	double compute_pressure(const State&);
 
-	double compute_energy(const State& state);
+	double compute_energy(const State&);
 
 private:
 	// calculate a btch of column: INSIDE MULTITHREAD

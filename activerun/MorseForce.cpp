@@ -29,12 +29,16 @@ void MorseForce::init(const Dict& params, const System& system) {
 }
 
 void MorseForce::init_mpi(int thread_count) {
+
+	printf("Morse potential: ");
 	pool_size = thread_count;
 	if (pool_size > 0) {
+		printf("Using %d threads\n", pool_size);
 		force_cache.resize(pool_size);
 		neigh_cache.resize(pool_size);
 	}
 	else {
+		printf("Using main thread\n");
 		force_cache.resize(1);
 		neigh_cache.resize(1);
 	}
@@ -49,7 +53,7 @@ void MorseForce::update_ahead(State& state, std::vector<Vec>& F) {
 
 }
 
-void MorseForce::mp_update(FixedThreadPool& pool, const State& state, const PBCInfo& pbc, const NeighbourList& neigh_list) {
+void MorseForce::mp_update(FixedThreadPool& pool, const State& state, const Context& context) {
 	energy_cache = 0.0;
 
 	for (auto& fc : force_cache) {
@@ -61,21 +65,21 @@ void MorseForce::mp_update(FixedThreadPool& pool, const State& state, const PBCI
 		for (int i = 0; i < pool_size; i++) {
 			pool.submit(std::bind(&MorseForce::update_batch,
 				this,
-				1 + neigh_list.box_num[0] * i / pool_size, 1 + neigh_list.box_num[0] * (i + 1) / pool_size,
-				&state, &pbc, &neigh_list, &neigh_cache[i], &force_cache[i]), true);
+				1 + context.neigh_list->box_num[0] * i / pool_size, 1 + context.neigh_list->box_num[0] * (i + 1) / pool_size,
+				&state, &context.pbc, context.neigh_list, &neigh_cache[i], &force_cache[i]), true);
 		}
 	}
 	else {
-		update(state, pbc, neigh_list);
+		update(state, context);
 	}
 }
 
-void MorseForce::update(const State& state, const PBCInfo& pbc, const NeighbourList& neigh_list) {
-	update_batch(1, neigh_list.box_num[0] + 1,
-		&state, &pbc, &neigh_list, &neigh_cache[0], &force_cache[0]);
+void MorseForce::update(const State& state, const Context& context) {
+	update_batch(1, context.neigh_list->box_num[0] + 1,
+		&state, &context.pbc, context.neigh_list, &neigh_cache[0], &force_cache[0]);
 }
 
-void MorseForce::update_later(std::vector<Vec2>& F) {
+void MorseForce::update_later(std::vector<Vec>& F) {
 	for (const auto& fc : force_cache) {
 		auto fc_iter = fc.begin();
 		auto F_iter = F.begin();
@@ -88,38 +92,56 @@ void MorseForce::update_later(std::vector<Vec2>& F) {
 }
 
 void MorseForce::update_batch(int start, int end, const State* state, const PBCInfo* pbc, const NeighbourList* neigh_list,
-	std::vector<size_t>* neigh_cache, std::vector<Vec2>* F) {
+	std::vector<size_t>* neigh_cache, std::vector<Vec>* F) {
 	for (int i = start; i < end; i++) {
 		update_column(i, state, pbc, neigh_list, neigh_cache, F);
 	}
 }
 
-void MorseForce::update_column(int i, const State* state, const PBCInfo* pbc, const NeighbourList* neigh_list, std::vector<size_t>* neigh_cache, std::vector<Vec2>* F) {
+void MorseForce::update_column(int i, const State* state, const PBCInfo* pbc, const NeighbourList* neigh_list, std::vector<size_t>* neigh_cache, std::vector<Vec>* F) {
 
-	for (int j = 1; j <= neigh_list->box_num[1]; j++) {
+	for (int j = 1; j <= neigh_list->box_num[1]; j++) 
+#ifdef THREE_DIMENSION
+		for(int k = 1; k <= neigh_list->box_num[2]; k++){
+		auto cell1 = &neigh_list.at(i, j, k);
+#else
+		{
 		auto cell1 = &neigh_list->at(i, j);
+#endif // THREE_DIMENSION
 		neigh_cache->clear();
-		/*		for (int nb_i = i - 1; nb_i <= i + 1; nb_i++)
-		int nb_i = i + 1;
-		for (int nb_j = j - 1; nb_j <= j + 1; nb_j++) {
-		auto cell2 = &neigh_list->at(nb_i, nb_j);
-		neigh_cache->insert(neigh_cache->end(), cell2->begin(), cell2->end());
-		}*/
 
-		/// Related with dimension
+#ifdef THREE_DIMENSION
+		{auto cell2 = &neigh_list->at(i + 1, j - 1, k); neigh_cache->insert(neigh_cache->end(), cell2->begin(), cell2->end()); }
+		{auto cell2 = &neigh_list->at(i + 1, j, k); neigh_cache->insert(neigh_cache->end(), cell2->begin(), cell2->end()); }
+		{auto cell2 = &neigh_list->at(i + 1, j + 1, k); neigh_cache->insert(neigh_cache->end(), cell2->begin(), cell2->end()); }
+		{auto cell2 = &neigh_list->at(i, j + 1, k); neigh_cache->insert(neigh_cache->end(), cell2->begin(), cell2->end()); }
+		for(int p = -1; p <= 1; p++)
+		for (int q = -1; q <= 1; q++)
+			{
+				{auto cell2 = &neigh_list->at(i + p, j + q, k + 1); neigh_cache->insert(neigh_cache->end(), cell2->begin(), cell2->end()); }
 
-		const std::vector<size_t>* cell2;
-		cell2 = &neigh_list->at(i + 1, j - 1); neigh_cache->insert(neigh_cache->end(), cell2->begin(), cell2->end());
-		cell2 = &neigh_list->at(i + 1, j); neigh_cache->insert(neigh_cache->end(), cell2->begin(), cell2->end());
-		cell2 = &neigh_list->at(i + 1, j + 1); neigh_cache->insert(neigh_cache->end(), cell2->begin(), cell2->end());
-		cell2 = &neigh_list->at(i, j + 1); neigh_cache->insert(neigh_cache->end(), cell2->begin(), cell2->end());
+			}
 
+#else
+		{auto cell2 = &neigh_list->at(i + 1, j - 1); neigh_cache->insert(neigh_cache->end(), cell2->begin(), cell2->end()); }
+		{auto cell2 = &neigh_list->at(i + 1, j); neigh_cache->insert(neigh_cache->end(), cell2->begin(), cell2->end()); }
+		{auto cell2 = &neigh_list->at(i + 1, j + 1); neigh_cache->insert(neigh_cache->end(), cell2->begin(), cell2->end()); }
+		{auto cell2 = &neigh_list->at(i, j + 1); neigh_cache->insert(neigh_cache->end(), cell2->begin(), cell2->end()); }
+
+#endif // THREE_DIMENSION
+
+		
 		for (const auto& id1 : *cell1)
 			for (const auto& id2 : *neigh_cache) {
 				//		if (id2 >= id1) continue;
 				auto d = state->pos[id2] - state->pos[id1];
 				pbc->wrap_pair(d);
-				if (abs(d[0]) > cutoff_global || abs(d[1]) > cutoff_global)continue;
+				if (abs(d[0]) > cutoff_global || abs(d[1]) > cutoff_global
+#ifdef THREE_DIMENSION
+					|| abs(d[2]) > cutoff_global
+#endif // THREE_DIMENSION
+
+					)continue;
 				update_pair(id1, id2, d, *state, *F);
 
 			}
@@ -129,7 +151,11 @@ void MorseForce::update_column(int i, const State* state, const PBCInfo* pbc, co
 				if (id2 >= id1) continue;
 				auto d = state->pos[id2] - state->pos[id1];
 				pbc->wrap_pair(d);
-				if (abs(d[0]) > cutoff_global || abs(d[1]) > cutoff_global)continue;
+				if (abs(d[0]) > cutoff_global || abs(d[1]) > cutoff_global
+#ifdef THREE_DIMENSION
+					|| abs(d[2]) > cutoff_global
+#endif // THREE_DIMENSION
+					)continue;
 				update_pair(id1, id2, d, *state, *F);
 			}
 	}

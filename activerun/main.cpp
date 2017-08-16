@@ -124,7 +124,7 @@ int main(int argc, char* argv[]) {
     }
     force_morse.update_cache(system, context);
 
-	printf("Start running session...\n\n");
+	printf("\nStart running session...\n\n");
 
     TrajDumper trajdumper(dump_filename);
     trajdumper.dump(system, state, 0);
@@ -133,24 +133,33 @@ int main(int argc, char* argv[]) {
 	thermodumper.dump_head();
 
 	srand(0);
+	int64_t time_neighlist = 0, time_force = 0, time_integrator = 0, time_total = 0, time_last = clock();
 
     for (context.current_step = 0; context.current_step < context.total_steps; context.current_step++) {
 
-        try {
-            context.pbc.update(state.pos);
-        }
-        catch (const std::out_of_range&) {
-            fprintf(stderr, "At step %zd\n", context.current_step);
-			dump_snapshot(state, context);
-			trajdumper.dump(system, state, context.current_step);
-            return 1;
-        }
-        context.neigh_list->build_from_pos(state.pos);
+		time_last = clock();
+		if (context.current_step % 2 == 0) {
+			try {
+				context.pbc.update(state.pos);
+			}
+			catch (const std::out_of_range&) {
+				fprintf(stderr, "At step %zd\n", context.current_step);
+				dump_snapshot(state, context);
+				trajdumper.dump(system, state, context.current_step);
+				return 1;
+			}
+			context.neigh_list->build_from_pos(state.pos);
+
+		}
+
+		time_neighlist += (time_total = clock()) - time_last;
+		time_last = time_total;
+
 		for (auto& fb : context.force_buffer) {
 			memset(&fb[0], 0, sizeof(Vec) * fb.size());
 		}
 
-		force_morse.mp_update(context.pool, state, context.pbc, *context.neigh_list);
+		force_morse.mp_update(context.pool, state, context);
         force_brown.mp_update(context.pool, state, context.force_buffer[0]);
         if (has_swim && context.current_step >= input.swimstart) {
 			force_swim.mp_update(context.pool, state, context.force_buffer[1]);
@@ -159,10 +168,16 @@ int main(int argc, char* argv[]) {
 		context.pool.wait();
 		force_morse.update_later(context.force_buffer[2]);
 
+		time_force += (time_total = clock()) - time_last;
+		time_last = time_total;
+
         integrator.update(state, context);
-		thermostat.temperature_cache = integrator.update_temperature();
+
+		time_integrator += (time_total = clock()) - time_last;
+		time_last = time_total;
 
         if ((context.current_step + 1) % input.output == 0) {
+			thermostat.temperature_cache = integrator.update_temperature();
             trajdumper.dump(system, state, context.current_step + 1);
 			context.pbc.update_image(state.pos);
 			thermostat.update(context, integrator.velocity_cache);
@@ -175,9 +190,16 @@ int main(int argc, char* argv[]) {
         }
     }
 
+	time_total = clock();
+	printf("\n\nTotal time: %.2fs\n", (double)time_total / CLOCKS_PER_SEC);
+	printf("Force time:         %.2fs (%.2f%%)\n", (double)time_force / CLOCKS_PER_SEC, 100.0 * time_force / time_total);
+	printf("Neighbourlist time: %.2fs (%.2f%%)\n", (double)time_neighlist / CLOCKS_PER_SEC, 100.0 * time_neighlist / time_total);
+	printf("Integrator time:    %.2fs (%.2f%%)\n", (double)time_integrator / CLOCKS_PER_SEC, 100.0 * time_integrator / time_total);
+
 	if (write_restart) {
 		state.write_data(datafile);
 		datafile.write_data(restart_filename);
+		printf("\nRestart written to %s\n", restart_filename);
 	}
 
 	return 0;
