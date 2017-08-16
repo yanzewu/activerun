@@ -84,6 +84,7 @@ void SwimForce::update(const State& state, std::vector<Vec>& force_buffer) {
 	}
 
 	for (int i = 0; i < force_buffer.size(); i++) {
+		if (!group_cache[i])continue;
 		force_buffer[i] = Vec2(cos(angle_cache[i]), sin(angle_cache[i])) * force_coeff_cache[i];
 	}
 

@@ -91,7 +91,7 @@ int main(int argc, char* argv[]) {
 	context.init_multicore((int)mpi_param.get("np", 1.0), 2);
 	if (has_swim) {
 		context.thread_num[2]--;
-		context.thread_num[0] = 0;
+		context.thread_num[0] = 1;
 	}
 
 	force_brown.init_mpi(context.thread_num[0]);
