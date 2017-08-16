@@ -75,8 +75,6 @@ public:
     std::vector<double> Pe_R;
 	std::vector<double> Pe_S;
 
-    Vec2* image_begin;
-
     std::vector<int> group_cache;
 
 	std::vector<double> angle_cache;
@@ -106,6 +104,48 @@ public:
 	double compute_energy(const State&);
 };
 
+
+class SwimForce3d : public Force {
+public:
+
+	double temperature;
+	int my_type;
+
+	bool using_thread;
+
+	bool brownian_rotation;
+
+	std::vector<double> Pe_R;
+	std::vector<double> Pe_S;
+
+	std::vector<int> group_cache;
+
+	std::vector<Vec3> direct_cache;
+	std::vector<Vec3> angular_momentum_cache;
+
+	std::vector<double> torque_coeff_cache;
+	std::vector<double> force_coeff_cache;
+	std::vector<double> rot_viscosity_cache;
+	std::vector<double> rot_coeff_cache;
+
+	SwimForce3d();
+
+	void init(const Dict&, System& system);
+
+	void init_mpi(int thread_count);
+
+	void update_ahead(State&, std::vector<Vec3>& force_buffer);
+
+	void update(const State&, std::vector<Vec3>& force_buffer);
+
+	void mp_update(FixedThreadPool&, const State&, std::vector<Vec3>& foce_buffer);
+
+	void update_cache(const System&, const Context&);
+
+	double compute_pressure(const State&, const std::vector<Vec3>& force_buffer);
+
+	double compute_energy(const State&);
+};
 
 
 class MorseForce : public Force {

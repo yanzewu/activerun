@@ -103,7 +103,7 @@ void MorseForce::update_column(int i, const State* state, const PBCInfo* pbc, co
 	for (int j = 1; j <= neigh_list->box_num[1]; j++) 
 #ifdef THREE_DIMENSION
 		for(int k = 1; k <= neigh_list->box_num[2]; k++){
-		auto cell1 = &neigh_list.at(i, j, k);
+		auto cell1 = &neigh_list->at(i, j, k);
 #else
 		{
 		auto cell1 = &neigh_list->at(i, j);
@@ -118,7 +118,7 @@ void MorseForce::update_column(int i, const State* state, const PBCInfo* pbc, co
 		for(int p = -1; p <= 1; p++)
 		for (int q = -1; q <= 1; q++)
 			{
-				{auto cell2 = &neigh_list->at(i + p, j + q, k + 1); neigh_cache->insert(neigh_cache->end(), cell2->begin(), cell2->end()); }
+				auto cell2 = &neigh_list->at(i + p, j + q, k + 1); neigh_cache->insert(neigh_cache->end(), cell2->begin(), cell2->end()); 
 
 			}
 

@@ -4,7 +4,7 @@
 class ThermoStat {
 public:
 
-	std::vector<Vec2> init_pos;
+	std::vector<Vec> init_pos;
 	std::vector<double> pressure_cache;
 	double temperature_cache;
 	

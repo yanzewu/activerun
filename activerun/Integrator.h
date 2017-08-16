@@ -8,7 +8,7 @@
 class LangevinIntegrator {
 public:
 
-    std::vector<Vec2> velocity_cache;		// only cached when compute_temperature is set
+    std::vector<Vec> velocity_cache;		// only cached when compute_temperature is set
 
     bool compute_temperature;	// whether temperature is computed (using different update algorithm)
 
@@ -36,8 +36,8 @@ private:
     double timestep_cache;
     std::vector<double> inv_viscosity_cache;	// acceleration coeff
 
-    std::vector<Vec2> force_buffer[2];		// overall force buffer
-	std::vector<Vec2>& cur_force_buffer;	// pointer to force_buffer
-	std::vector<Vec2>& last_force_buffer;	// pointer to last force_buffer
+    std::vector<Vec> force_buffer[2];		// overall force buffer
+	std::vector<Vec>& cur_force_buffer;	// pointer to force_buffer
+	std::vector<Vec>& last_force_buffer;	// pointer to last force_buffer
 
 };

@@ -100,7 +100,7 @@ public:
 	std::map<std::string, int> attribute_names;
 
 
-    Vec2 box;
+    Vec box;
 
 };
 

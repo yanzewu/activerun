@@ -122,9 +122,16 @@ void dump_force(const Context& context, FILE* dumpfile) {
 void dump_nblist(const NeighbourList& nblist, FILE* dumpfile) {
 	fprintf(dumpfile, "NeighbourList:\n");
 	for (int i = 0; i < nblist.box_num[0]; i++)
-		for (int j = 0; j < nblist.box_num[1]; j++) {
+		for (int j = 0; j < nblist.box_num[1]; j++) 
+#ifndef THREE_DIMENSION
+		{
 			fprintf(dumpfile, "%d,%d  ", i, j);
-			for (auto& x : nblist.at(i, j)) {
+			for (auto& x : nblist.at(i, j))
+#else
+			for(int k = 0; k < nblist.box_num[2]; k++){
+			for(auto& x: nblist.at(i, j, k))
+#endif // !THREE_DIMENSION
+			{
 				fprintf(dumpfile, " %zd", x);
 			}
 			fprintf(dumpfile, "\n");

@@ -1,13 +1,13 @@
 #include "Force.h"
 
-SwimForce::SwimForce() 
+SwimForce3d::SwimForce3d()
 {
 	this->is_direct = false;
 	this->is_paired = false;
 	this->is_potential_force = false;
 }
 
-void SwimForce::init(const Dict& params, System& system) {
+void SwimForce3d::init(const Dict& params, System& system) {
 
 	printf("\nInitializing Swim Force\n\n");
 
@@ -37,9 +37,10 @@ void SwimForce::init(const Dict& params, System& system) {
 	printf("Randomize initial configuration...\nseed=%d\n", rand_seed);
 	srand(rand_seed);
 
-	angle_cache.resize(system.atom_num);
-	for (auto& angle : angle_cache) {
-		angle = rand_uniform() * M_PI;
+	direct_cache.resize(system.atom_num);
+	for (auto& direct : direct_cache) {
+		direct = Vec3(rand_uniform(), rand_uniform(), rand_uniform());
+		direct /= sqrt(direct.norm2());
 	}
 
 	torque_coeff_cache.resize(system.atom_num);
@@ -65,48 +66,45 @@ void SwimForce::init(const Dict& params, System& system) {
 	}
 }
 
-void SwimForce::init_mpi(int thread_count) {
+void SwimForce3d::init_mpi(int thread_count) {
 	printf("Swim force: ");
 	using_thread = thread_count > 0;
 	printf(using_thread ? "Using thread pool\n" : "Using main thread\n");
 }
 
-void SwimForce::update_ahead(State& state, std::vector<Vec>& F) {
+void SwimForce3d::update_ahead(State& state, std::vector<Vec>& F) {
 
 }
 
-void SwimForce::update(const State& state, std::vector<Vec>& force_buffer) {
+void SwimForce3d::update(const State& state, std::vector<Vec>& force_buffer) {
 	for (int i = 0; i < force_buffer.size(); ++i) {
 		if (!group_cache[i]) continue;
-		angular_momentum_cache[i] = torque_coeff_cache[i] * (rand_uniform() - 0.5);
+		angular_momentum_cache[i][0] = (rand_uniform() - 0.5) * torque_coeff_cache[i];
+		angular_momentum_cache[i][1] = (rand_uniform() - 0.5) * torque_coeff_cache[i];
+		angular_momentum_cache[i][2] = (rand_uniform() - 0.5) * torque_coeff_cache[i];
 	}
 
 	for (int i = 0; i < force_buffer.size(); i++) {
-		angle_cache[i] += angular_momentum_cache[i] * rot_coeff_cache[i];
+		direct_cache[i] += direct_cache[i].cross(angular_momentum_cache[i] * rot_coeff_cache[i]);
 	}
 
 	for (int i = 0; i < force_buffer.size(); i++) {
 		if (!group_cache[i])continue;
-#ifdef THREE_DIMENSION
-		force_buffer[i] = Vec3(cos(angle_cache[i]), sin(angle_cache[i]), 0) * force_coeff_cache[i];
-#else
-		force_buffer[i] = Vec2(cos(angle_cache[i]), sin(angle_cache[i])) * force_coeff_cache[i];
-
-#endif // THREE_DIMENSION
+		force_buffer[i] = direct_cache[i] * force_coeff_cache[i];
 	}
 
 }
 
-void SwimForce::mp_update(FixedThreadPool& pool, const State& state, std::vector<Vec>& force_buffer) {
+void SwimForce3d::mp_update(FixedThreadPool& pool, const State& state, std::vector<Vec>& force_buffer) {
 	if (using_thread) {
-		pool.submit(std::bind(&SwimForce::update, this, std::ref(state), std::ref(force_buffer)));
+		pool.submit(std::bind(&SwimForce3d::update, this, std::ref(state), std::ref(force_buffer)));
 	}
 	else {
 		update(state, force_buffer);
 	}
 }
 
-void SwimForce::update_cache(const System& system, const Context& context) {
+void SwimForce3d::update_cache(const System& system, const Context& context) {
 
 	// group cache
 	for (int i = 0; i < system.atom_num; i++) {
@@ -152,10 +150,10 @@ void SwimForce::update_cache(const System& system, const Context& context) {
 	}
 }
 
-double SwimForce::compute_pressure(const State& state, const std::vector<Vec>& force_buffer) {
+double SwimForce3d::compute_pressure(const State& state, const std::vector<Vec>& force_buffer) {
 	return 0.0;
 }
 
-double SwimForce::compute_energy(const State& state) {
+double SwimForce3d::compute_energy(const State& state) {
 	return 0.0;
 }
