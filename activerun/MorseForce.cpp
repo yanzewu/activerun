@@ -1,5 +1,7 @@
 
 #include "Force.h"
+#include "arrayutil.h"
+
 
 MorseForce::MorseForce() {
 	this->is_direct = false;
@@ -77,14 +79,8 @@ void MorseForce::update(const State& state, const PBCInfo& pbc, const NeighbourL
 
 void MorseForce::update_later(std::vector<Vec2>& F) {
 	for (const auto& fc : force_cache) {
-		auto fc_iter = fc.begin();
-		auto F_iter = F.begin();
-
-		for (; fc_iter != fc.end();) {
-			*(F_iter++) += *(fc_iter++);
-		}
+		array_add(fc, F);
 	}
-
 }
 
 void MorseForce::update_batch(int start, int end, const State* state, const PBCInfo* pbc, const NeighbourList* neigh_list,
@@ -99,14 +95,6 @@ void MorseForce::update_column(int i, const State* state, const PBCInfo* pbc, co
 	for (int j = 1; j <= neigh_list->box_num[1]; j++) {
 		auto cell1 = &neigh_list->at(i, j);
 		neigh_cache->clear();
-		/*		for (int nb_i = i - 1; nb_i <= i + 1; nb_i++)
-		int nb_i = i + 1;
-		for (int nb_j = j - 1; nb_j <= j + 1; nb_j++) {
-		auto cell2 = &neigh_list->at(nb_i, nb_j);
-		neigh_cache->insert(neigh_cache->end(), cell2->begin(), cell2->end());
-		}*/
-
-		/// Related with dimension
 
 		const std::vector<size_t>* cell2;
 		cell2 = &neigh_list->at(i + 1, j - 1); neigh_cache->insert(neigh_cache->end(), cell2->begin(), cell2->end());

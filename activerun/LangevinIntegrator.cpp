@@ -1,4 +1,5 @@
 #include "Integrator.h"
+#include "arrayutil.h"
 
 LangevinIntegrator::LangevinIntegrator() :
 	compute_temperature(false),
@@ -17,14 +18,6 @@ void LangevinIntegrator::init(const Dict& params, const System& system, const Co
 	compute_temperature = (bool)params.get("compute_temp", 0.0);
 	printf(compute_temperature ? "Using velocity cache for temperature\n" : "No temperature computation\n");
 
-	try {
-		inv_viscosity_cache = system.get_attr("zeta");
-
-	}
-	catch (const std::out_of_range&) {
-		printf("Error: Damp cache not found\n");
-		throw;
-	}
 	for (auto& fb : force_buffer) {
 		fb.resize(system.atom_num);
 	}
@@ -35,9 +28,7 @@ void LangevinIntegrator::init(const Dict& params, const System& system, const Co
 void LangevinIntegrator::update(State& state, const Context& context) {
 	memset(&cur_force_buffer[0], 0, sizeof(Vec)*cur_force_buffer.size());
 	for (const auto& fb : context.force_buffer) {
-		for (size_t i = 0; i < fb.size(); i++) {
-			cur_force_buffer[i] += fb[i];
-		}
+		array_add(fb, cur_force_buffer);
 	}
 
 	if (!compute_temperature) {
@@ -47,7 +38,7 @@ void LangevinIntegrator::update(State& state, const Context& context) {
 	}
 	else {
 		for (int i = 0; i < state.pos.size(); i++) {
-			velocity_cache[i] = cur_force_buffer[i] * inv_viscosity_cache[i];
+			velocity_cache[i] = (cur_force_buffer[i] * inv_viscosity_cache[i]);
 		}
 		for (int i = 0; i < state.pos.size(); i++) {
 			state.pos[i] += velocity_cache[i] * timestep_cache;
@@ -107,8 +98,17 @@ double LangevinIntegrator::update_temperature() {
 	return temperature * 0.25 * timestep_cache / velocity_cache.size(); // 0.25-2d!
 }
 
-void LangevinIntegrator::update_cache(const Context& context) {
+void LangevinIntegrator::update_cache(const System& system, const Context& context) {
 	timestep_cache = context.timestep;
+	try {
+		inv_viscosity_cache = system.get_attr("zeta");
+
+	}
+	catch (const std::out_of_range&) {
+		printf("Error: Damp cache not found\n");
+		throw;
+	}
+
 	if (!compute_temperature) {
 		for (auto& ivc : inv_viscosity_cache) {
 			ivc = context.timestep / ivc;

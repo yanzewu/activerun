@@ -123,14 +123,7 @@ public:
 
 	/* Cached Data */
 
-    double energy_cache;
-	double cutoff_global2;	// square of cutoff_global
-
     std::vector<int> group_cache;
-    std::vector<double> atom_radius_cache;
-
-	std::vector<std::vector<size_t> > neigh_cache;
-	std::vector<std::vector<Vec> > force_cache;
 
 	MorseForce();
 
@@ -171,6 +164,14 @@ private:
 	double pair_energy(double r, double exp_cache);
 
 
+	double energy_cache;
+	double cutoff_global2;	// square of cutoff_global
+
+	std::vector<double> atom_radius_cache;
+
+	std::vector<std::vector<size_t> > neigh_cache;
+	std::vector<std::vector<Vec> > force_cache;
+	std::vector<std::vector<Vec2d> > pair_cache;
 };
 
 

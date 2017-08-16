@@ -116,7 +116,7 @@ int main(int argc, char* argv[]) {
 
     // run
 
-    integrator.update_cache(context);
+    integrator.update_cache(system, context);
 	thermostat.update_cache(system);
     force_brown.update_cache(system, context);
     if (has_swim) {

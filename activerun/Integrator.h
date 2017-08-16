@@ -30,14 +30,14 @@ public:
 	double update_temperature();
 
 	// must be called before first run
-	void update_cache(const Context& context);
+	void update_cache(const System& system, const Context& context);
 
 private:
     double timestep_cache;
     std::vector<double> inv_viscosity_cache;	// acceleration coeff
 
-    std::vector<Vec2> force_buffer[2];		// overall force buffer
-	std::vector<Vec2>& cur_force_buffer;	// pointer to force_buffer
-	std::vector<Vec2>& last_force_buffer;	// pointer to last force_buffer
+    std::vector<Vec> force_buffer[2];		// overall force buffer
+	std::vector<Vec>& cur_force_buffer;	// pointer to force_buffer
+	std::vector<Vec>& last_force_buffer;	// pointer to last force_buffer
 
 };

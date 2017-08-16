@@ -126,6 +126,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="activerun.h" />
+    <ClInclude Include="arrayutil.h" />
     <ClInclude Include="Context.h" />
     <ClInclude Include="dict.h" />
     <ClInclude Include="dimension.h" />
