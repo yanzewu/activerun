@@ -107,6 +107,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -125,7 +126,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="activerun.h" />
-    <ClInclude Include="arrayutil.h" />
     <ClInclude Include="Context.h" />
     <ClInclude Include="dict.h" />
     <ClInclude Include="dimension.h" />

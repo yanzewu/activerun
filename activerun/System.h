@@ -18,11 +18,26 @@ public:
     std::vector<Vec> pos;
 
     void init(const DataFile& datafile) {
+#ifndef THREE_DIMENSION
+		pos.reserve(datafile.pos.size());
+		for (const auto& p : datafile.pos) {
+			pos.emplace_back(Vec2(p[0], p[1]));
+		}
+#else
         pos = datafile.pos;
+#endif // !THREE_DIMENSION
     }
 
 	void write_data(DataFile& datafile) {
+#ifndef THREE_DIMENSION
+		datafile.pos.resize(0);
+		for (const auto& p : pos) {
+			datafile.pos.emplace_back(Vec3(p[0], p[1], 0));
+		}
+#else
 		datafile.pos = pos;
+
+#endif // !THREE_DIMENSION
 	}
 };
 
@@ -51,8 +66,12 @@ public:
                 atom_attributes[k][i] = datafile.type_pair_coeff[mytype][k];
             }
         }
+#ifndef THREE_DIMENSION
 
-        box = datafile.box;
+		box = Vec2(datafile.box[0], datafile.box[1]);
+#else
+		box = datafile.box;
+#endif // !THREE_DIMENSION
     }
 
     const std::vector<double>& get_attr(const std::string& name)const {

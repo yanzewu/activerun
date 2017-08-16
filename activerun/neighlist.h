@@ -7,22 +7,14 @@
 #include "vec.h"
 #include <vector>
 
-#ifndef Vec
-#define Vec Vec2
-#endif // !Vec
-
-#ifndef Vecd
-#define Vecd Vec2d
-#endif // !Vecd
-
 
 class NeighbourList {
 public:
 
-    NeighbourList(const Vec& box, double cutoff, bool using_ghost=false) {
+    NeighbourList(const Vec2& box, double cutoff, bool using_ghost=false) {
 		printf("\nInitializing celllist\n\n");
 
-        box_num = Vecd(box / cutoff);
+        box_num = Vec2d(box / cutoff);
 		printf("Total %d x %d boxes\n", box_num[0], box_num[1]);
 
         unit = box / box_num.to_float();
@@ -38,11 +30,11 @@ public:
 		else {
 			printf("Using ghost\n");
 			cells.resize((box_num[0] + 2) * (box_num[1] + 2));
-			box_num_real = Vecd(box_num[0] + 2, box_num[1] + 2);
+			box_num_real = Vec2d(box_num[0] + 2, box_num[1] + 2);
 		}
     }
 
-    void build_from_pos(const std::vector<Vec>& pos) {
+    void build_from_pos(const std::vector<Vec2>& pos) {
         for (auto& cell : cells) {
             cell.clear();
         }
@@ -92,9 +84,9 @@ public:
         return at(x, y);
     }
 
-    Vec unit;
-    Vecd box_num;
-	Vecd box_num_real;
+    Vec2 unit;
+    Vec2d box_num;
+	Vec2d box_num_real;
 	bool using_ghost;
 
     std::vector<std::vector<size_t> > cells;

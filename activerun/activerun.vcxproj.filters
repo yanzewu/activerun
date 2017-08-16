@@ -47,9 +47,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="arrayutil.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="thermostat.h">
       <Filter>Header Files</Filter>
     </ClInclude>

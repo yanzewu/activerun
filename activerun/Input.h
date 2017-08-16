@@ -43,11 +43,11 @@ public:
 	std::vector<double> type_mass;
 	std::vector<std::vector<double> > type_pair_coeff;
 
-	std::vector<Vec> pos;
+	std::vector<Vec3> pos;
 	std::vector<int> atom_type;
 	std::vector<int> atom_group;
 
-	Vec box, box_start;
+	Vec3 box, box_start;
 
 	void init_size();
 

@@ -3,6 +3,7 @@
 
 activerun-dev
 *.o
+tests/
 
 # User-specific files
 *.suo

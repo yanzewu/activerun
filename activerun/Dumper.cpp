@@ -7,15 +7,22 @@
 #include <stdarg.h>
 
 void sprintf_vec(char* buffer, const Vec2& v) {
-	sprintf(buffer, "% .5g    % .5g", v[0], v[1]);
+	sprintf(buffer, "% .5g % .5g", v[0], v[1]);
+}
+
+void sprintf_vec(char* buffer, const Vec3& v) {
+	sprintf(buffer, "% .5g % .5g % .5g", v[0], v[1], v[2]);
 }
 
 void foprintf(FILE* file, const char* str, ...) {
 	va_list args;
 	va_start(args, str);
+	char buffer[256];
+	vsprintf(buffer, str, args);
+	va_end(args);
 
-	vfprintf(file, str, args);
-	vprintf(str, args);
+	printf("%s", buffer);
+	fprintf(file, "%s", buffer);
 }
 
 void TrajDumper::dump(const System& system, const State& state, size_t step) {
@@ -89,7 +96,7 @@ void LineDumper::dump(const std::vector<double>& value, const size_t& step) {
 /* Error dump */
 
 void dump_pos(const State& state, FILE* dumpfile) {
-	char buffer[128];
+	char buffer[256];
 
 	fprintf(dumpfile, "Positions:\n");
 	for (size_t i = 0; i < state.pos.size(); i++) {
@@ -99,7 +106,7 @@ void dump_pos(const State& state, FILE* dumpfile) {
 }
 
 void dump_force(const Context& context, FILE* dumpfile) {
-	char buffer[128];
+	char buffer[256];
 	fprintf(dumpfile, "Forces:\n");
 	for (size_t i = 0; i < context.force_buffer[0].size(); i++) {
 		fprintf(dumpfile, "%zd", i);

@@ -69,7 +69,7 @@ int DataFile::read_data(const char* filename) {
 		throw std::exception("IO Error");
 	}
 
-	const int buffer_size = 128;
+	const int buffer_size = 256;
 	char buffer[buffer_size];
 
 	// head section
@@ -79,7 +79,7 @@ int DataFile::read_data(const char* filename) {
 		throw std::exception("IO Error");
 	}
 	fgets(buffer, buffer_size, file_data);
-	char name_buffer[128];
+	char name_buffer[256];
 
 	// num section
 
@@ -119,7 +119,7 @@ int DataFile::read_data(const char* filename) {
 
 	// box section
 
-	for (int i = 0; i < 2; i++) {
+	for (int i = 0; i < 3; i++) {
 		fgets(buffer, buffer_size, file_data);
 		if (buffer[0] == '\n') {
 			fprintf(stderr, "Invalid box size section\n");
@@ -194,10 +194,11 @@ int DataFile::read_data(const char* filename) {
 
 				fgets(buffer, buffer_size, file_data);
 				sscanf(buffer, "%d", &id);
-				sscanf(buffer, "%*d%d%d%lf%lf%*i", &atom_group[id - 1],
+				sscanf(buffer, "%*d%d%d%lf%lf%lf", &atom_group[id - 1],
 					&atom_type[id - 1],
 					&pos[id - 1][0],
-					&pos[id - 1][1]);
+					&pos[id - 1][1],
+					&pos[id - 1][2]);
 
 			}
 			break;
@@ -216,6 +217,10 @@ int DataFile::read_data(const char* filename) {
 int DataFile::write_data(const char * filename)
 {
 	FILE* file_data = fopen(filename, "w");
+	if (!file_data) {
+		fprintf(stderr, "Cannot open output\n");
+		throw std::exception("IO Error");
+	}
 	fprintf(file_data, "LAMMPS Data File\n\n");
 
 	fprintf(file_data, "%d atoms\n", atom_num);
@@ -227,11 +232,7 @@ int DataFile::write_data(const char * filename)
 
 	fprintf(file_data, "%f %f xlo xhi\n", box_start[0], box[0]);
 	fprintf(file_data, "%f %f ylo yhi\n", box_start[1], box[1]);
-#ifdef THREE_DIMENSION
 	fprintf(file_data, "%f %f zlo zhi\n", box_start[2], box[2]);
-#else
-	fprintf(file_data, "%f %f zlo zhi\n", -0.25, 0.25);
-#endif // THREE_DIMENSION
 	fprintf(file_data, "%f %f %f xy xz yz\n", 0.0, 0.0, 0.0);
 	fprintf(file_data, "\n");
 
@@ -254,11 +255,7 @@ int DataFile::write_data(const char * filename)
 	fprintf(file_data, "Atoms\n\n");
 	for (int i = 0; i < atom_num; i++) {
 		fprintf(file_data, "%d %d %d", i + 1, atom_group[i], atom_type[i]);
-#ifdef THREE_DIMENSION
 		fprintf(file_data, " %f %f %f\n", pos[i][0], pos[i][1], pos[i][2]);
-#else
-		fprintf(file_data, " %f %f %f\n", pos[i][0], pos[i][1], 0);
-#endif // THREE_DIMENSION
 	}
 
 	fclose(file_data);
