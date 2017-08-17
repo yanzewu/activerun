@@ -123,6 +123,7 @@
     <ClCompile Include="mathutil.cpp" />
     <ClCompile Include="MorseForce.cpp" />
     <ClCompile Include="SwimForce.cpp" />
+    <ClCompile Include="SwimForce3d.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="activerun.h" />
@@ -138,6 +139,7 @@
     <ClInclude Include="mathutil.h" />
     <ClInclude Include="neighlist.h" />
     <ClInclude Include="pbc.h" />
+    <ClInclude Include="Serializer.h" />
     <ClInclude Include="System.h" />
     <ClInclude Include="thermostat.h" />
     <ClInclude Include="threadpool.h" />

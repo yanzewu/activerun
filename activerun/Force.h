@@ -75,8 +75,6 @@ public:
     std::vector<double> Pe_R;
 	std::vector<double> Pe_S;
 
-    Vec2* image_begin;
-
     std::vector<int> group_cache;
 
 	std::vector<double> angle_cache;
@@ -107,6 +105,48 @@ public:
 };
 
 
+class SwimForce3d : public Force {
+public:
+
+	double temperature;
+	int my_type;
+
+	bool using_thread;
+
+	bool brownian_rotation;
+
+	std::vector<double> Pe_R;
+	std::vector<double> Pe_S;
+
+	std::vector<int> group_cache;
+
+	std::vector<Vec3> direct_cache;
+	std::vector<Vec3> angular_momentum_cache;
+
+	std::vector<double> torque_coeff_cache;
+	std::vector<double> force_coeff_cache;
+	std::vector<double> rot_viscosity_cache;
+	std::vector<double> rot_coeff_cache;
+
+	SwimForce3d();
+
+	void init(const Dict&, System& system);
+
+	void init_mpi(int thread_count);
+
+	void update_ahead(State&, std::vector<Vec3>& force_buffer);
+
+	void update(const State&, std::vector<Vec3>& force_buffer);
+
+	void mp_update(FixedThreadPool&, const State&, std::vector<Vec3>& foce_buffer);
+
+	void update_cache(const System&, const Context&);
+
+	double compute_pressure(const State&, const std::vector<Vec3>& force_buffer);
+
+	double compute_energy(const State&);
+};
+
 
 class MorseForce : public Force {
 public:
@@ -135,19 +175,19 @@ public:
 	void update_ahead(State&, std::vector<Vec>&);
 
 	// update, submit job in parallel
-	void mp_update(FixedThreadPool&, const State&, const PBCInfo&, const NeighbourList&);
+	void mp_update(FixedThreadPool&, const State&, const Context&);
 
 	// update in main thread
-	void update(const State&, const PBCInfo&, const NeighbourList&);
+	void update(const State&, const Context&);
 
 	// collect and wait job in parallel
 	void update_later(std::vector<Vec>& F);
 
-	void update_cache(const System& system, const Context& context);
+	void update_cache(const System& system, const Context&);
 
-	double compute_pressure(const State& state);
+	double compute_pressure(const State&);
 
-	double compute_energy(const State& state);
+	double compute_energy(const State&);
 
 private:
 	// calculate a btch of column: INSIDE MULTITHREAD

@@ -86,9 +86,9 @@ public:
 	}
 
 private:
-	Vec2 box_cache;
-	Vec2 half_box_cache;
-	std::vector<Vec2d> location_cache;
+	Vec box_cache;
+	Vec half_box_cache;
+	std::vector<Vecd> location_cache;
 
 
 };

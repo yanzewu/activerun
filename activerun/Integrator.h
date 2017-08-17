@@ -8,7 +8,7 @@
 class LangevinIntegrator {
 public:
 
-    std::vector<Vec2> velocity_cache;		// only cached when compute_temperature is set
+    std::vector<Vec> velocity_cache;		// only cached when compute_temperature is set
 
     bool compute_temperature;	// whether temperature is computed (using different update algorithm)
 

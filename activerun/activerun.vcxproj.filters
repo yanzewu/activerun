@@ -45,6 +45,9 @@
     <ClCompile Include="SwimForce.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="SwimForce3d.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="thermostat.h">
@@ -95,7 +98,7 @@
     <ClInclude Include="dict.h">
       <Filter>util</Filter>
     </ClInclude>
-    <ClInclude Include="arrayutil.h">
+    <ClInclude Include="Serializer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -58,5 +58,17 @@ public:
 };
 
 
+struct RestartFile {
+    char input_name[128];
+    char data_name[128];
+    char output_name[128];
+    char thermo_name[128];
+    size_t current_step;
+
+    int read_restart(const char*);
+
+    int write_restart(const char*);
+};
+
 #endif // !ACTIVERUN_INPUT_H
 

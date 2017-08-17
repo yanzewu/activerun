@@ -46,13 +46,20 @@ struct Context {
 	}
 
 	void init_multicore(int thread_count, int pair_force_idx) {
+		printf("\nInitialize parallel\n\n");
+
 		thread_num.resize(force_buffer.size());
 		for (size_t i = 0; i < thread_num.size(); i++) {
 			if (i == pair_force_idx)thread_num[i] = thread_count - 1;
 			else thread_num[i] = 0;
 		}
+
 		if (thread_count > 1) {
+			printf("Create pool with %d threads\n", thread_count - 1);
 			pool.init(thread_count - 1);
+		}
+		else {
+			printf("No pool created\n");
 		}
 	}
 

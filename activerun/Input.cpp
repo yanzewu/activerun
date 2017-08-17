@@ -66,7 +66,7 @@ int DataFile::read_data(const char* filename) {
 	FILE *file_data;
 	if ((file_data = fopen(filename, "r")) == NULL) {
 		fprintf(stderr, "%s could not be opened\n", filename);
-		throw std::exception("IO Error");
+		throw std::runtime_error("IO Error");
 	}
 
 	const int buffer_size = 256;
@@ -76,7 +76,7 @@ int DataFile::read_data(const char* filename) {
 	fgets(buffer, buffer_size, file_data);
 	if (strcmp(buffer, "LAMMPS Data File\n")) {
 		fprintf(stderr, "Unrecognized file_data file!\n");
-		throw std::exception("IO Error");
+		throw std::runtime_error("IO Error");
 	}
 	fgets(buffer, buffer_size, file_data);
 	char name_buffer[256];
@@ -219,7 +219,7 @@ int DataFile::write_data(const char * filename)
 	FILE* file_data = fopen(filename, "w");
 	if (!file_data) {
 		fprintf(stderr, "Cannot open output\n");
-		throw std::exception("IO Error");
+		throw std::runtime_error("IO Error");
 	}
 	fprintf(file_data, "LAMMPS Data File\n\n");
 

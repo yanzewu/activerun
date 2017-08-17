@@ -40,7 +40,9 @@ void BrownianForce::init(const Dict& params, System& system) {
 }
 
 void BrownianForce::init_mpi(int thread_count) {
+	printf("Brownian force: ");
 	using_thread = thread_count > 0;
+	printf(using_thread ? "Using thread pool\n" : "Using main thread\n");
 }
 
 void BrownianForce::update_ahead(State& state, std::vector<Vec>& force_buffer) {
@@ -81,7 +83,7 @@ void BrownianForce::update_cache(const System& system, const Context& context) {
 	}
 }
 
-double BrownianForce::compute_pressure(const State& state, const std::vector<Vec2>& force) {
+double BrownianForce::compute_pressure(const State& state, const std::vector<Vec>& force) {
 	return 0.0;
 }
 

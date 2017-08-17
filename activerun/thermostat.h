@@ -4,7 +4,7 @@
 class ThermoStat {
 public:
 
-	std::vector<Vec2> init_pos;
+	std::vector<Vec> init_pos;
 	std::vector<double> pressure_cache;
 	double temperature_cache;
 	
@@ -26,7 +26,7 @@ public:
 				for (size_t j = 0; j < context.force_buffer[i].size(); j++) {
 					pressure_cache[i] += context.force_buffer[i][j].dot(context.pbc.image_cache[j] - init_pos[j]);
 				}
-				pressure_cache[i] /= (volume * 2); // 2 here is dimension!
+				pressure_cache[i] /= (volume * DIMENSION); // 2 here is dimension!
 			}
 		}
 
@@ -35,7 +35,7 @@ public:
 			for (const auto& v : velocity) {
 				temperature_cache += v.norm2();
 			}
-			temperature_cache /= (velocity.size() * 2); // 2 here is dimension!
+			temperature_cache /= (velocity.size() * DIMENSION); // 2 here is dimension!
 		}
 	}
 
