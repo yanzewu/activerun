@@ -65,9 +65,13 @@ struct RestartFile {
     char thermo_name[128];
     size_t current_step;
 
+    RestartFile() {
+        thermo_name[0] = '\0';
+    }
+
     int read_restart(const char*);
 
-    int write_restart(const char*);
+    void write_restart(const char*);
 };
 
 #endif // !ACTIVERUN_INPUT_H

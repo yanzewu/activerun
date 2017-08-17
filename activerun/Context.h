@@ -27,7 +27,7 @@ struct Context {
 
 	void init_timestep(const Dict& param) {
 		timestep = param.at("timestep");
-		total_steps = (size_t)param.at("steps");
+		total_steps = (size_t)param.at("step");
 	}
 
 	void init_force_buffer(const System& system, int force_num) {

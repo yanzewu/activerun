@@ -58,6 +58,10 @@ inline void array_mul_double(const double* src1, const double* src2, double* dst
 inline void array_add(const std::vector<Vec2>& src, std::vector<Vec2>& dst) {
 	array_add_double((double*)&src[0], (double*)&dst[0], 2 * src.size());
 }
+
+inline void array_add(const std::vector<Vec3>& src, std::vector<Vec3>& dst) {
+    array_add_double((double*)&src[0], (double*)&dst[0], 3 * src.size());
+}
 /*
 inline void array_mul(const std::vector<Vec2>& src1, const std::vector<Vec2>& src2, std::vector<Vec2>& dst) {
 	array_mul_double((double*)&src1[0], (double*)&src2[0], (double*)&dst[0], 2 * src1.size());

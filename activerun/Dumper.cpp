@@ -150,3 +150,30 @@ void dump_snapshot(const State& state, const Context& context, const char* name)
 	fclose(dumpfile);
 	fprintf(stderr, "shapshot saved to %s\n", name);
 }
+
+void dump_xyz(const State & state, const char * name)
+{
+    FILE* dumpfile = fopen(name, "w");
+    for (auto& pos : state.pos) {
+#ifndef THREE_DIMENSION
+        fprintf(dumpfile, "%lf %lf\n", pos[0], pos[1]);
+#else
+        fprintf(dumpfile, "%lf %lf %lf\n", pos[0], pos[1], pos[2]);
+#endif // !THREE_DIMENSION
+
+    }
+    fclose(dumpfile);
+}
+
+void read_xyz(State& state, const char* name) {
+    FILE* dumpfile = fopen(name, "r");
+    for (auto& pos : state.pos) {
+#ifndef THREE_DIMENSION
+        fscanf(dumpfile, "%lf%lf\n", &pos[0], &pos[1]);
+#else
+        fscanf(dumpfile, "%lf%lf%lf\n", &pos[0], &pos[1], &pos[2]);
+#endif // !THREE_DIMENSION
+
+    }
+    fclose(dumpfile);
+}

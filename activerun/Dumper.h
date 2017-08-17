@@ -11,8 +11,8 @@ class Dumper {
 public:
     FILE* ofile;
 
-    Dumper(const char* filename) {
-        ofile = fopen(filename, "w");
+    Dumper(const char* filename, const char* mode="w") {
+        ofile = fopen(filename, mode);
         if (!ofile) {
             fprintf(stderr, "Cannot open %s", filename);
         }
@@ -34,7 +34,7 @@ public:
 class TrajDumper : public Dumper {
 public:
 
-    TrajDumper(const char* filename) : Dumper(filename) {
+    TrajDumper(const char* filename, bool is_restart=false) : Dumper(filename, is_restart ? "a":"w") {
 
     }
 
@@ -43,8 +43,10 @@ public:
 
 class LineDumper : public Dumper {
 public:
-    LineDumper(const char* filename, const std::vector<std::string>& dump_names, bool with_output=false) : 
-        Dumper(filename),
+
+
+    LineDumper(const char* filename, const std::vector<std::string>& dump_names, bool with_output=false, bool is_restart=false) : 
+        Dumper(filename, is_restart ? "a":"w"),
         dump_names(dump_names),
 		with_output(with_output)
 		{
@@ -61,6 +63,7 @@ public:
 
 // used in error handling
 void dump_snapshot(const State& state, const Context& context, const char* name="snapshot.txt");
-void dump_nblist(const NeighbourList& nblist, FILE* dumpfile);
+
+void dump_xyz(const State& state, const char* name);
 
 #endif // !ACTIVERUN_DUMPER
