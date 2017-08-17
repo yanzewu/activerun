@@ -9,7 +9,7 @@ SwimForce3d::SwimForce3d()
 
 void SwimForce3d::init(const Dict& params, System& system) {
 
-	printf("\nInitializing Swim Force\n\n");
+	printf("\nInitializing 3D Swim Force\n\n");
 
 	try {
 		Pe_R.resize(system.atom_num, params.at("PeR"));
@@ -18,6 +18,7 @@ void SwimForce3d::init(const Dict& params, System& system) {
 		printf("Error: PeR not found\n");
 		throw;
 	}
+    printf("Rotation Peclet=%.4f", Pe_R[0]);
 
 	brownian_rotation = (bool)params.get("brownian", 1.0);
 	if (brownian_rotation) {
@@ -39,8 +40,10 @@ void SwimForce3d::init(const Dict& params, System& system) {
 
 	direct_cache.resize(system.atom_num);
 	for (auto& direct : direct_cache) {
-		direct = Vec3(rand_uniform(), rand_uniform(), rand_uniform());
-		direct /= sqrt(direct.norm2());
+        direct[2] = rand_uniform() * 2 - 1.0;
+        double theta = rand_uniform() * 2 * M_PI;
+        direct[0] = cos(theta) * sqrt(1 - direct[2] * direct[2]);
+        direct[1] = sin(theta) * sqrt(1 - direct[2] * direct[2]);
 	}
 
 	torque_coeff_cache.resize(system.atom_num);
@@ -86,6 +89,7 @@ void SwimForce3d::update(const State& state, std::vector<Vec>& force_buffer) {
 
 	for (int i = 0; i < force_buffer.size(); i++) {
 		direct_cache[i] += direct_cache[i].cross(angular_momentum_cache[i] * rot_coeff_cache[i]);
+        direct_cache[i] /= sqrt(direct_cache[i].norm2());
 	}
 
 	for (int i = 0; i < force_buffer.size(); i++) {

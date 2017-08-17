@@ -18,6 +18,7 @@ void SwimForce::init(const Dict& params, System& system) {
 		printf("Error: PeR not found\n");
 		throw;
 	}
+    printf("Rotation Peclet=%.4f\n", Pe_R[0]);
 
 	brownian_rotation = (bool)params.get("brownian", 1.0);
 	if (brownian_rotation) {
@@ -39,7 +40,7 @@ void SwimForce::init(const Dict& params, System& system) {
 
 	angle_cache.resize(system.atom_num);
 	for (auto& angle : angle_cache) {
-		angle = rand_uniform() * M_PI;
+		angle = rand_uniform() * 2 * M_PI;
 	}
 
 	torque_coeff_cache.resize(system.atom_num);

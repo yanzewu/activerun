@@ -68,28 +68,31 @@ void LineDumper::dump_head() {
 		for (const auto& name : dump_names) {
 			foprintf(ofile, "\t%s", name.c_str());
 		}
+        foprintf(ofile, "\n");
 	}
 	else {
 		fprintf(ofile, "step");
 		for (const auto& name : dump_names) {
 			fprintf(ofile, "\t%s", name.c_str());
 		}
+        fprintf(ofile, "\n");
 	}
 }
 
 void LineDumper::dump(const std::vector<double>& value, const size_t& step) {
 	if (with_output) {
-		foprintf(ofile, "\n%zd", step);
+		foprintf(ofile, "%zd", step);
 		for (const auto& v : value) {
 			foprintf(ofile, "\t% f", v);
 		}
+        foprintf(ofile, "\n");
 	}
 	else {
-		fprintf(ofile, "\n%zd", step);
+		fprintf(ofile, "%zd", step);
 		for (const auto& v : value) {
 			fprintf(ofile, "\t% f", v);
 		}
-
+        fprintf(ofile, "\n");
 	}
 }
 
@@ -125,10 +128,11 @@ void dump_nblist(const NeighbourList& nblist, FILE* dumpfile) {
 		for (int j = 0; j < nblist.box_num[1]; j++) 
 #ifndef THREE_DIMENSION
 		{
-			fprintf(dumpfile, "%d,%d  ", i, j);
+			fprintf(dumpfile, "%d,%d: ", i, j);
 			for (auto& x : nblist.at(i, j))
 #else
 			for(int k = 0; k < nblist.box_num[2]; k++){
+				fprintf(dumpfile, "%d,%d,%d: ", i, j, k);
 			for(auto& x: nblist.at(i, j, k))
 #endif // !THREE_DIMENSION
 			{

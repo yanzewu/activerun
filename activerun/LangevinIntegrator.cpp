@@ -104,7 +104,7 @@ double LangevinIntegrator::update_temperature() {
 	for (size_t i = 0; i < velocity_cache.size(); i++) {
 		temperature += velocity_cache[i].norm2() / inv_viscosity_cache[i];
 	}
-	return temperature * 0.25 * timestep_cache / velocity_cache.size(); // 0.25-2d!
+	return temperature * 0.5 * timestep_cache / velocity_cache.size() / DIMENSION;
 }
 
 void LangevinIntegrator::update_cache(const Context& context) {

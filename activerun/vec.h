@@ -174,7 +174,7 @@ public:
 	}
 
 private:
-	double data[2];
+	double data[3];
 
 };
 
@@ -201,7 +201,7 @@ public:
         return Vec2((double)data[0], (double)data[1]);
     }
 private:
-    int data[3];
+    int data[2];
 };
 
 class Vec3d {

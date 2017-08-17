@@ -1,5 +1,6 @@
 
 #include "Force.h"
+#include "Dumper.h"
 
 MorseForce::MorseForce() {
 	this->is_direct = false;
@@ -143,7 +144,6 @@ void MorseForce::update_column(int i, const State* state, const PBCInfo* pbc, co
 
 					)continue;
 				update_pair(id1, id2, d, *state, *F);
-
 			}
 
 		for (const auto& id1 : *cell1)
@@ -176,13 +176,13 @@ void MorseForce::update_pair(size_t id1, size_t id2, const Vec& d, const State& 
 
 
 	double exp_cache = exp(-kappa * (r - sum_radius));
-	/*		if (abs(exp_cache) > 1000) {
+			if (abs(exp_cache) > 1000) {
 	fprintf(stderr, "Warning: Force too large for %d-%d, %.5g\n", id1, id2, exp_cache);
-	fprintf(stderr, "Distance is %.4f, %.4f (%.4f)\n", d[0], d[1], r);
-	fprintf(stderr, "Position is %.4f,%.4f and %.4f,%.4f\n", state.pos[id1][0], state.pos[id1][1], state.pos[id2][0], state.pos[id2][1]);
+	fprintf(stderr, "Distance is %.4f, %.4f %.4f (%.4f)\n", d[0], d[1], d[2], r);
+	fprintf(stderr, "Position is %.4f,%.4f,%.4f and %.4f,%.4f,%.4f\n", state.pos[id1][0], state.pos[id1][1], state.pos[id1][2], state.pos[id2][0], state.pos[id2][1], state.pos[id2][2]);
 	fprintf(stderr, "Radius is %.4f and %.4f\n", atom_radius_cache[id1], atom_radius_cache[id2]);
-	//			throw std::out_of_range("Force too large");
-	}*/
+				throw std::runtime_error("Force too large");
+	}
 	Vec f_temp = d * pair_force_div_r(r, exp_cache) / r;
 	F[id1] -= f_temp;
 	F[id2] += f_temp;

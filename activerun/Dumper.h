@@ -61,5 +61,6 @@ public:
 
 // used in error handling
 void dump_snapshot(const State& state, const Context& context, const char* name="snapshot.txt");
+void dump_nblist(const NeighbourList& nblist, FILE* dumpfile);
 
 #endif // !ACTIVERUN_DUMPER

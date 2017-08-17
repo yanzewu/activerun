@@ -104,8 +104,13 @@ public:
 
 	NeighbourList3(const Vec3& box, double cutoff, bool using_ghost = false) {
 		printf("\nInitializing celllist\n\n");
+		printf("cutoff=%f\n", cutoff);
 
 		box_num = Vec3d(box / cutoff);
+        if (using_ghost && (box_num[0] == 1 || box_num[1] == 1 || box_num[2] == 1)) {
+            printf("Error: box too small\n");
+            throw std::runtime_error("Cannot initialize neighbourlist");
+        }
 		printf("Total %d x %d x %d boxes\n", box_num[0], box_num[1], box_num[2]);
 
 		unit = box / box_num.to_float();
@@ -115,7 +120,7 @@ public:
 
 		//2d
 		if (!using_ghost) {
-			cells.resize(box_num[0] * box_num[1]);
+			cells.resize(box_num[0] * box_num[1] * box_num[2]);
 			box_num_real = box_num;
 		}
 		else {
@@ -146,6 +151,7 @@ public:
 		}
 	}
 
+    // f*cking loop unroll
 	void synchronize_ghost() {
 
 		// xy - plane
@@ -167,6 +173,30 @@ public:
 		for (int j = 1; j <= box_num[0]; j++) {
 			at(j, 0, i) = at(j, box_num[1], i);
 			at(j, box_num[1] + 1, i) = at(j, 1, i);
+		}
+
+		// z axis
+		for (int i = 1; i <= box_num[2]; i++) {
+			at(0,              0,              i) = at(box_num[0], box_num[1], i);
+			at(0,              box_num[1] + 1, i) = at(box_num[0], 1,          i);
+			at(box_num[0] + 1, 0,              i) = at(1,          box_num[1], i);
+			at(box_num[0] + 1, box_num[1] + 1, i) = at(1,          1,          i);
+		}
+
+		// x axis
+		for (int i = 1; i <= box_num[0]; i++) {
+			at(i, 0,              0             ) = at(i, box_num[1], box_num[2]);
+			at(i, 0,              box_num[2] + 1) = at(i, box_num[1], 1);
+			at(i, box_num[1] + 1, 0             ) = at(i, 1,          box_num[2]);
+			at(i, box_num[1] + 1, box_num[2] + 1) = at(i, 1,          1);
+		}
+
+		// y axis
+		for (int i = 1; i <= box_num[1]; i++) {
+			at(0,              i, 0             ) = at(box_num[0], i, box_num[2]);
+			at(box_num[0] + 1, i, 0             ) = at(1,          i, box_num[2]); 
+			at(0             , i, box_num[2] + 1) = at(box_num[0], i, 1);
+			at(box_num[0] + 1, i, box_num[2] + 1) = at(1,          i, 1);
 		}
 
 		at(0, 0, 0) = at(box_num[0], box_num[1], box_num[2]);

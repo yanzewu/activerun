@@ -138,6 +138,7 @@
     <ClInclude Include="mathutil.h" />
     <ClInclude Include="neighlist.h" />
     <ClInclude Include="pbc.h" />
+    <ClInclude Include="Serializer.h" />
     <ClInclude Include="System.h" />
     <ClInclude Include="thermostat.h" />
     <ClInclude Include="threadpool.h" />

@@ -66,7 +66,7 @@ int DataFile::read_data(const char* filename) {
 	FILE *file_data;
 	if ((file_data = fopen(filename, "r")) == NULL) {
 		fprintf(stderr, "%s could not be opened\n", filename);
-		throw std::exception("IO Error");
+		throw std::runtime_error("IO Error");
 	}
 
 	const int buffer_size = 256;

@@ -3,12 +3,12 @@
 
 int main(int argc, char* argv[]) {
 
+
+    // prepare system
     if (argc < 2) {
         printf("Usage activerun [inputfile] (datafile)");
         return 1;
     }
-
-    // prepare system
 
     InputParameter input;
 	if (input.read_input(argv[1])) {
@@ -67,7 +67,7 @@ int main(int argc, char* argv[]) {
     BrownianForce force_brown;
 	force_brown.init(fix_brownian_param, system);
     
-    SwimForce force_swim;
+    SwimForce3d force_swim;
     bool has_swim = std::count(system.atom_type.begin(), system.atom_type.end(), 1) > 0;
 	if (has_swim) {
         force_swim.init(fix_swim_param, system);
@@ -90,8 +90,8 @@ int main(int argc, char* argv[]) {
 
 	context.init_multicore((int)mpi_param.get("np", 1.0), 2);
 	if (has_swim) {
-		context.thread_num[2]--;
-		context.thread_num[0] = 1;
+//		context.thread_num[2]--;
+	//	context.thread_num[0] = 1;
 	}
 
 	force_brown.init_mpi(context.thread_num[0]);
@@ -138,7 +138,7 @@ int main(int argc, char* argv[]) {
     for (context.current_step = 0; context.current_step < context.total_steps; context.current_step++) {
 
 		time_last = clock();
-		if (context.current_step % 2 == 0) {
+//		if (context.current_step % 2 == 0) {
 			try {
 				context.pbc.update(state.pos);
 			}
@@ -150,7 +150,7 @@ int main(int argc, char* argv[]) {
 			}
 			context.neigh_list->build_from_pos(state.pos);
 
-		}
+//		}
 
 		time_neighlist += (time_total = clock()) - time_last;
 		time_last = time_total;
@@ -158,8 +158,15 @@ int main(int argc, char* argv[]) {
 		for (auto& fb : context.force_buffer) {
 			memset(&fb[0], 0, sizeof(Vec) * fb.size());
 		}
-
+        try {
 		force_morse.mp_update(context.pool, state, context);
+
+        }
+        catch (const std::runtime_error&) {
+            trajdumper.dump(system, state, context.current_step / input.output * input.output);
+            dump_snapshot(state, context);
+            return 1;
+        }
         force_brown.mp_update(context.pool, state, context.force_buffer[0]);
         if (has_swim && context.current_step >= input.swimstart) {
 			force_swim.mp_update(context.pool, state, context.force_buffer[1]);
