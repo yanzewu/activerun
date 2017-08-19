@@ -107,7 +107,8 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <BufferSecurityCheck>true</BufferSecurityCheck>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -123,6 +124,7 @@
     <ClCompile Include="mathutil.cpp" />
     <ClCompile Include="MorseForce.cpp" />
     <ClCompile Include="SwimForce.cpp" />
+    <ClCompile Include="SwimForce3d.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="activerun.h" />

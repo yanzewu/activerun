@@ -13,7 +13,10 @@
 #define NeighbourList NeighbourList2
 #endif // THREE_DIMENSION
 
-
+template<class T>
+inline void copy_vec(std::vector<T>& dst, const std::vector<T>& src) {
+    dst.assign(src.begin(), src.end());
+}
 
 class NeighbourList2 {
 public:
@@ -67,10 +70,10 @@ public:
 			at(0, i) = at(box_num[0], i);
 			at(box_num[0] + 1, i) = at(1, i);
 		}
-		at(0, 0) = at(box_num[0], box_num[1]);
-		at(0, box_num[1] + 1) = at(box_num[0], 1);
-		at(box_num[0] + 1, 0) = at(1, box_num[1]);
-		at(box_num[0] + 1, box_num[1] + 1) = at(1, 1);
+		copy_vec(at(0, 0), at(box_num[0], box_num[1]));
+        copy_vec(at(0, box_num[1] + 1), at(box_num[0], 1));
+        copy_vec(at(box_num[0] + 1, 0), at(1, box_num[1]));
+        copy_vec(at(box_num[0] + 1, box_num[1] + 1), at(1, 1));
 	}
 
     inline std::vector<size_t>& at(int x, int y) {
@@ -157,56 +160,56 @@ public:
 		// xy - plane
 		for (int i = 1; i <= box_num[0]; i++)
 		for (int j = 1; j <= box_num[1]; j++){
-			at(i, j, 0) = at(i, j, box_num[2]);
-			at(i, j, box_num[2] + 1) = at(i, j, 1);
+            copy_vec(at(i, j, 0), at(i, j, box_num[2]));
+            copy_vec(at(i, j, box_num[2] + 1), at(i, j, 1));
 		}
 
 		// yz - plane
 		for (int i = 1; i <= box_num[1]; i++)
 		for (int j = 1; j <= box_num[2]; j++){
-			at(0, i, j) = at(box_num[0], i, j);
-			at(box_num[0] + 1, i, j) = at(1, i, j);
+            copy_vec(at(0, i, j), at(box_num[0], i, j));
+            copy_vec(at(box_num[0] + 1, i, j), at(1, i, j));
 		}
 
 		// zx - plane
 		for (int i = 1; i <= box_num[2]; i++)
 		for (int j = 1; j <= box_num[0]; j++) {
-			at(j, 0, i) = at(j, box_num[1], i);
-			at(j, box_num[1] + 1, i) = at(j, 1, i);
+            copy_vec(at(j, 0, i), at(j, box_num[1], i));
+            copy_vec(at(j, box_num[1] + 1, i), at(j, 1, i));
 		}
 
 		// z axis
 		for (int i = 1; i <= box_num[2]; i++) {
-			at(0,              0,              i) = at(box_num[0], box_num[1], i);
-			at(0,              box_num[1] + 1, i) = at(box_num[0], 1,          i);
-			at(box_num[0] + 1, 0,              i) = at(1,          box_num[1], i);
-			at(box_num[0] + 1, box_num[1] + 1, i) = at(1,          1,          i);
+            copy_vec(at(0,              0,              i), at(box_num[0], box_num[1], i));
+            copy_vec(at(0,              box_num[1] + 1, i), at(box_num[0], 1,          i));
+            copy_vec(at(box_num[0] + 1, 0,              i), at(1,          box_num[1], i));
+            copy_vec(at(box_num[0] + 1, box_num[1] + 1, i), at(1,          1,          i));
 		}
 
 		// x axis
 		for (int i = 1; i <= box_num[0]; i++) {
-			at(i, 0,              0             ) = at(i, box_num[1], box_num[2]);
-			at(i, 0,              box_num[2] + 1) = at(i, box_num[1], 1);
-			at(i, box_num[1] + 1, 0             ) = at(i, 1,          box_num[2]);
-			at(i, box_num[1] + 1, box_num[2] + 1) = at(i, 1,          1);
+            copy_vec(at(i, 0,              0             ), at(i, box_num[1], box_num[2]));
+            copy_vec(at(i, 0,              box_num[2] + 1), at(i, box_num[1], 1));
+            copy_vec(at(i, box_num[1] + 1, 0             ), at(i, 1,          box_num[2]));
+            copy_vec(at(i, box_num[1] + 1, box_num[2] + 1), at(i, 1,          1));
 		}
 
 		// y axis
 		for (int i = 1; i <= box_num[1]; i++) {
-			at(0,              i, 0             ) = at(box_num[0], i, box_num[2]);
-			at(box_num[0] + 1, i, 0             ) = at(1,          i, box_num[2]); 
-			at(0             , i, box_num[2] + 1) = at(box_num[0], i, 1);
-			at(box_num[0] + 1, i, box_num[2] + 1) = at(1,          i, 1);
+            copy_vec(at(0,              i, 0             ), at(box_num[0], i, box_num[2]));
+            copy_vec(at(box_num[0] + 1, i, 0             ), at(1,          i, box_num[2]));
+            copy_vec(at(0             , i, box_num[2] + 1), at(box_num[0], i, 1));
+            copy_vec(at(box_num[0] + 1, i, box_num[2] + 1), at(1,          i, 1));
 		}
 
-		at(0, 0, 0) = at(box_num[0], box_num[1], box_num[2]);
-		at(box_num[0] + 1, 0,              0             ) = at(1,          box_num[1], box_num[2]);
-		at(0,              box_num[1] + 1, 0             ) = at(box_num[0], 1,          box_num[2]);
-		at(0,              0,              box_num[2] + 1) = at(box_num[0], box_num[1], 1);
-		at(box_num[0] + 1, box_num[1] + 1, 0             ) = at(1,          1,          box_num[2]);
-		at(box_num[0] + 1, 0,              box_num[2] + 1) = at(1,          box_num[1], 1);
-		at(0,              box_num[1] + 1, box_num[2] + 1) = at(box_num[0], 1,          1);
-		at(box_num[0] + 1, box_num[1] + 1, box_num[2] + 1) = at(1,          1,          1);
+        copy_vec(at(0, 0, 0), at(box_num[0], box_num[1], box_num[2]));
+        copy_vec(at(box_num[0] + 1, 0,              0             ), at(1,          box_num[1], box_num[2]));
+        copy_vec(at(0,              box_num[1] + 1, 0             ), at(box_num[0], 1,          box_num[2]));
+        copy_vec(at(0,              0,              box_num[2] + 1), at(box_num[0], box_num[1], 1));
+        copy_vec(at(box_num[0] + 1, box_num[1] + 1, 0             ), at(1,          1,          box_num[2]));
+        copy_vec(at(box_num[0] + 1, 0,              box_num[2] + 1), at(1,          box_num[1], 1));
+        copy_vec(at(0,              box_num[1] + 1, box_num[2] + 1), at(box_num[0], 1,          1));
+        copy_vec(at(box_num[0] + 1, box_num[1] + 1, box_num[2] + 1), at(1,          1,          1));
 	}
 
 	inline std::vector<size_t>& at(int x, int y, int z) {
