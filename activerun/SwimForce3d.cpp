@@ -1,5 +1,7 @@
 #include "Force.h"
 
+#ifdef THREE_DIMENSION
+
 SwimForce3d::SwimForce3d()
 {
 	this->is_direct = false;
@@ -161,3 +163,5 @@ double SwimForce3d::compute_pressure(const State& state, const std::vector<Vec>&
 double SwimForce3d::compute_energy(const State& state) {
 	return 0.0;
 }
+
+#endif // THREE_DIMENSION

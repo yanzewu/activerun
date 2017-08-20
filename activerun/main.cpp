@@ -190,7 +190,12 @@ int main(int argc, char* argv[]) {
     BrownianForce force_brown;
 	force_brown.init(config.get_dict("BrownianForce"), system);
     
+#ifndef THREE_DIMENSION
+    SwimForce force_swim;
+#else
     SwimForce3d force_swim;
+#endif // !THREE_DIMENSION
+
     bool has_swim = std::count(system.atom_type.begin(), system.atom_type.end(), 1) > 0;
     size_t swim_start = swim_param["swim_start"];
 
@@ -290,6 +295,9 @@ int main(int argc, char* argv[]) {
 
         if (using_thermo) {
             if (context.current_step == thermo_start) {
+                context.pbc.reset_location();
+                context.pbc.update_image(state.pos);
+
                 thermostat.init(context, state);
                 thermostat.compute_pressure = { 1, 1, 1 };
                 thermostat.compute_temperature = false;

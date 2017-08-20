@@ -85,6 +85,11 @@ public:
 		}
 	}
 
+    // reset location to main box
+    void reset_location() {
+        location_cache.assign(location_cache.size(), Vecd());
+    }
+
 private:
 	Vec box_cache;
 	Vec half_box_cache;

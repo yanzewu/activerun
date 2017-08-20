@@ -2,7 +2,7 @@ CXXFLAGS = -std=c++11 -lpthread -O3
 CXX = g++
 VPATH = activerun
 
-objects = main.o BrownianForce.o Dumper.o Input.o LangevinIntegrator.o mathutil.o MorseForce.o SwimForce.o
+objects = main.o BrownianForce.o Dumper.o Input.o LangevinIntegrator.o mathutil.o MorseForce.o SwimForce.o SwimForce3d.o
 
 activerun : $(objects)
 	$(CXX) $(CXXFLAGS) -o activerun-dev $(objects)
@@ -26,6 +26,9 @@ MorseForce.o : Force.h threadpool.h dict.h mathutil.h System.h Context.h include
 	vec.h dimension.h
 
 SwimForce.o : Force.h threadpool.h dict.h mathutil.h System.h Context.h includes.h Input.h \
+	neighlist.h pbc.h vec.h dict.h dimension.h 
+
+SwimForce3d.o : Force.h threadpool.h dict.h mathutil.h System.h Context.h includes.h Input.h \
 	neighlist.h pbc.h vec.h dict.h dimension.h 
 
 .PHONY : clean

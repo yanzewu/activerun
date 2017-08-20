@@ -16,7 +16,7 @@ public:
 		pressure_cache.resize(context.force_buffer.size());
 		compute_pressure.resize(context.force_buffer.size());
 		
-		init_pos = state_init.pos;
+        init_pos = context.pbc.image_cache;
 	}
 
 	void update(const Context& context, const std::vector<Vec> velocity) {
@@ -26,7 +26,7 @@ public:
 				for (size_t j = 0; j < context.force_buffer[i].size(); j++) {
 					pressure_cache[i] += context.force_buffer[i][j].dot(context.pbc.image_cache[j] - init_pos[j]);
 				}
-				pressure_cache[i] /= (volume * DIMENSION); // 2 here is dimension!
+				pressure_cache[i] /= (volume * DIMENSION); 
 			}
 		}
 
@@ -35,11 +35,16 @@ public:
 			for (const auto& v : velocity) {
 				temperature_cache += v.norm2();
 			}
-			temperature_cache /= (velocity.size() * DIMENSION); // 2 here is dimension!
+			temperature_cache /= (velocity.size() * DIMENSION);
 		}
 	}
 
 	void update_cache(const System& system) {
+#ifndef THREE_DIMENSION
 		volume = system.box[0] * system.box[1];
+#else
+        volume = system.box[0] * system.box[1] * system.box[2];
+#endif // !THREE_DIMENSION
+
 	}
 };

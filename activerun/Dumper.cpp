@@ -1,7 +1,5 @@
 #include "Dumper.h"
 
-#pragma once
-
 #include "System.h"
 #include "Context.h"
 #include <stdarg.h>
