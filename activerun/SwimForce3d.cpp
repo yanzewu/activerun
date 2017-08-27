@@ -90,8 +90,17 @@ void SwimForce3d::update(const State& state, std::vector<Vec>& force_buffer) {
 	}
 
 	for (int i = 0; i < force_buffer.size(); i++) {
-		direct_cache[i] += direct_cache[i].cross(angular_momentum_cache[i] * rot_coeff_cache[i]);
-        direct_cache[i] /= sqrt(direct_cache[i].norm2());
+        if (!group_cache[i]) continue;
+        Vec3 omega = angular_momentum_cache[i] * rot_coeff_cache[i];
+        
+        double angle_norm = sqrt(omega.norm2());
+        double s = sin(angle_norm), c = sqrt(1 - s*s);
+		
+        Vec3 n = omega / angle_norm;
+
+        direct_cache[i] = direct_cache[i] * c + n * n.dot(direct_cache[i])*(1 - c) +
+            n.cross(direct_cache[i]) * s;
+        direct_cache[i] /= sqrt(direct_cache[i].norm2()); // keep direct's length to 1
 	}
 
 	for (int i = 0; i < force_buffer.size(); i++) {
