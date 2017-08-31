@@ -16,7 +16,7 @@
 #define M_PI 3.141592653589793
 #endif // !M_PI
 
-#define THREE_DIMENSION
+#include "defines.h"
 
 #include "dimension.h"
 

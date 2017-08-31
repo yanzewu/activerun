@@ -1,5 +1,7 @@
 #include "activerun.h"
+#include "timer.h"
 #include "Serializer.h"
+#include "old_input.h"
 
 void set_default_value(Serializer& config) {
     
@@ -39,6 +41,11 @@ void set_default_value(Serializer& config) {
         {"compute_temp", true}
     });
 
+    // time
+    config["timer"] = json({
+        {"sample_step", 100}
+    });
+
     // restart
     config["restart"] = json({
         {"write_restart", true},
@@ -61,40 +68,6 @@ void set_default_value(Serializer& config) {
         { "Um", 5.0 },
         { "cutoff", 1.25}
     });
-}
-
-int read_legacy_input(const char* filename, Serializer& config) {
-
-    InputParameter input;
-    if (input.read_input(filename)) {
-        return 1;
-    }
-
-    config["input_file"] = std::string(filename);
-
-    config["BrownianForce"]["temp"] = input.kT;
-    config["BrownianForce"]["neta"] = input.viscosity;
-
-    config["SwimForce"]["swim_temp"] = input.kT;
-    config["SwimForce"]["neta"] = input.viscosity;
-    config["SwimForce"]["brownian"] = (input.brownrot == 1.0);
-    config["SwimForce"]["PeR"] = input.PeR;
-    config["SwimForce"]["swim_start"] = input.spstart;
-
-    config["MorseForce"]["kappa"] = input.kappa;
-    config["MorseForce"]["Um"] = input.Um;
-    config["MorseForce"]["cutoff"] = input.Rg * 2 + 1.0;
-
-    config["run"]["timestep"] = input.dt;
-    config["run"]["steps"] = input.stepstR / input.dt;
-
-    config["dump"]["dump_step"] = input.output;
-    config["thermo"]["thermo_step"] = input.output;
-    config["thermo"]["thermo_start"] = input.spstart;
-
-    config["util"]["cell_size"] = input.mincellL;
-
-    return 0;
 }
 
 int read_input(int argc, char* argv[], Serializer& config) {
@@ -162,6 +135,7 @@ int main(int argc, char* argv[]) {
     json thermo_param = config["thermo"];
     json restart_param = config["restart"];
     json swim_param = config["SwimForce"];
+    json timer_param = config["timer"];
 
     Dict fix_brownian_param = config.get_dict("BrownianForce");
     Dict fix_swim_param = config.get_dict("SwimForce");
@@ -185,7 +159,7 @@ int main(int argc, char* argv[]) {
 
     // prepare forces
 
-    context.init_force_buffer(system, 3);
+    context.init_force_buffer(system, 3); // 3 forces
 
     BrownianForce force_brown;
 	force_brown.init(config.get_dict("BrownianForce"), system);
@@ -206,8 +180,6 @@ int main(int argc, char* argv[]) {
     MorseForce force_morse;
 	force_morse.init(pair_param, system);
 
-	// integrator+
-
     double cell_size = util_param["cell_size"];
     int np = util_param["np"];
     int neighlist_step = util_param["neighlist_step"];
@@ -215,11 +187,8 @@ int main(int argc, char* argv[]) {
 	context.init_timestep(time_param);
     context.init_pbc(system, true);
 	double max_atom_size = *std::max_element(system.get_attr("size").begin(), system.get_attr("size").end());
-    context.init_neighlist(system.box, cell_size * std::max(force_morse.cutoff_global, max_atom_size));
-	context.init_multicore(np, 2);
-
-    LangevinIntegrator integrator;
-    integrator.init(integrator_param, system, context);
+    context.init_neighlist(system.box, cell_size * std::max(force_morse.max_cutoff(), max_atom_size));
+	context.init_multicore(np, 2); // force 2 is paired force
 
 	// mpi
 
@@ -234,6 +203,11 @@ int main(int argc, char* argv[]) {
 	}
 	force_morse.init_mpi(context.thread_num[2]);
 
+    // integrator
+
+    LangevinIntegrator integrator;
+    integrator.init(integrator_param, system, context);
+
     // dump
 
     std::string dump_file = dump_param["dump_file"].get<std::string>().c_str();
@@ -241,6 +215,9 @@ int main(int argc, char* argv[]) {
 
     TrajDumper trajdumper(dump_file.c_str(), is_restart);
 
+    // thermo
+
+    size_t step_begin = config["current_step"];
 
     std::string thermo_file = thermo_param["thermo_file"].get<std::string>().c_str();
     bool using_thermo = thermo_param["using_thermo"];
@@ -248,6 +225,11 @@ int main(int argc, char* argv[]) {
     size_t thermo_start = thermo_param["thermo_start"];
     int thermo_ave_range = thermo_param["average_range"];
     int thermo_ave_step = thermo_param["average_step"];
+
+    if (thermo_start < step_begin) {
+        printf("Warning: thermo_start too small (%zd), using first frame (%zd) instead.\n", thermo_start, context.current_step);
+        thermo_start = step_begin;
+    }
 
     std::vector<double> pressure(3, 0.0);
     double temperature;
@@ -285,13 +267,19 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    context.current_step = config["current_step"];
+    // random seed
 
     int global_seed = config["global_seed"];
-	srand(global_seed);
-	int64_t time_neighlist = 0, time_force = 0, time_integrator = 0, time_total = 0, time_last = clock();
+	set_random_seed(global_seed);
 
-    for (; context.current_step < context.total_steps; context.current_step++) {
+
+    // timer
+
+    Timer timer;
+    timer.init({ "NeighList", "Force", "Integrator" });
+    int timer_step = timer_param["sample_step"];
+
+    for (context.current_step = step_begin; context.current_step < context.total_steps; context.current_step++) {
 
         if (using_thermo) {
             if (context.current_step == thermo_start) {
@@ -307,7 +295,7 @@ int main(int argc, char* argv[]) {
             }
         }
 
-		time_last = clock();
+        if (context.current_step % timer_step == 0) timer.set_checkpoint(-1);
 
 		if (context.current_step % neighlist_step == 0) {
 			try {
@@ -322,36 +310,32 @@ int main(int argc, char* argv[]) {
 			context.neigh_list->build_from_pos(state.pos);
 		}
 
-		time_neighlist += (time_total = clock()) - time_last;
-		time_last = time_total;
+        if (context.current_step % timer_step == 0) timer.set_checkpoint(0);
 
 		for (auto& fb : context.force_buffer) {
 			memset(&fb[0], 0, sizeof(Vec) * fb.size());
 		}
-        try {
-		force_morse.mp_update(context.pool, state, context);
-
+        //try {
+		force_morse.mp_update(context.pool, state, context);    // morse force must update first
+        /*
         }
         catch (const std::runtime_error&) {
             trajdumper.dump(system, state, context.current_step / dump_step * dump_step);
             dump_snapshot(state, context);
             return 1;
-        }
+        }*/
         force_brown.mp_update(context.pool, state, context.force_buffer[0]);
         if (has_swim && context.current_step >= swim_start) {
 			force_swim.mp_update(context.pool, state, context.force_buffer[1]);
         }
-	//	context.pool.start_all();
 		context.pool.wait();
 		force_morse.update_later(context.force_buffer[2]);
 
-		time_force += (time_total = clock()) - time_last;
-		time_last = time_total;
+        if (context.current_step % timer_step == 0) timer.set_checkpoint(1);
 
         integrator.update(state, context);
 
-		time_integrator += (time_total = clock()) - time_last;
-		time_last = time_total;
+        if (context.current_step % timer_step == 0) timer.set_checkpoint(2);
 
         if ((context.current_step + 1) % dump_step == 0) {
             trajdumper.dump(system, state, context.current_step + 1);
@@ -387,11 +371,7 @@ int main(int argc, char* argv[]) {
         }
     }
 
-	time_total = clock();
-	printf("\n\nTotal time: %.2fs\n", (double)time_total / CLOCKS_PER_SEC);
-	printf("Force time:         %.2fs (%.2f%%)\n", (double)time_force / CLOCKS_PER_SEC, 100.0 * time_force / time_total);
-	printf("Neighbourlist time: %.2fs (%.2f%%)\n", (double)time_neighlist / CLOCKS_PER_SEC, 100.0 * time_neighlist / time_total);
-	printf("Integrator time:    %.2fs (%.2f%%)\n", (double)time_integrator / CLOCKS_PER_SEC, 100.0 * time_integrator / time_total);
+    timer.print((context.current_step - step_begin) / timer_step, context.current_step - step_begin);
 
     bool write_restart = restart_param["write_restart"];
 

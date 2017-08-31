@@ -5,8 +5,8 @@
 
 #include <stdlib.h>
 
-double fRand(double a, double b);
 double rand_uniform();
+void set_random_seed(int);
 
 #endif // !MATHUTIL_H
 

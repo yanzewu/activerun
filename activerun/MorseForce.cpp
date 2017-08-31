@@ -208,8 +208,8 @@ void MorseForce::update_cache(const System& system, const Context& context) {
 	}
 }
 
-double MorseForce::compute_pressure(const State& state) {
-	return 0.0;
+double MorseForce::max_cutoff()const {
+    return cutoff_global;
 }
 
 double MorseForce::compute_energy(const State& state) {

@@ -152,11 +152,3 @@ void SwimForce::update_cache(const System& system, const Context& context) {
 			24.0 * zeta_R[i] * zeta_R[i] / tau_R[i] / context.timestep);
 	}
 }
-
-double SwimForce::compute_pressure(const State& state, const std::vector<Vec>& force_buffer) {
-	return 0.0;
-}
-
-double SwimForce::compute_energy(const State& state) {
-	return 0.0;
-}

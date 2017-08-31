@@ -104,6 +104,15 @@
     <ClInclude Include="arrayutil.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="defines.h">
+      <Filter>util</Filter>
+    </ClInclude>
+    <ClInclude Include="timer.h">
+      <Filter>util</Filter>
+    </ClInclude>
+    <ClInclude Include="old_input.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\.gitignore" />

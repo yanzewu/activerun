@@ -130,6 +130,7 @@
     <ClInclude Include="activerun.h" />
     <ClInclude Include="arrayutil.h" />
     <ClInclude Include="Context.h" />
+    <ClInclude Include="defines.h" />
     <ClInclude Include="dict.h" />
     <ClInclude Include="dimension.h" />
     <ClInclude Include="Dumper.h" />
@@ -139,11 +140,13 @@
     <ClInclude Include="Integrator.h" />
     <ClInclude Include="mathutil.h" />
     <ClInclude Include="neighlist.h" />
+    <ClInclude Include="old_input.h" />
     <ClInclude Include="pbc.h" />
     <ClInclude Include="Serializer.h" />
     <ClInclude Include="System.h" />
     <ClInclude Include="thermostat.h" />
     <ClInclude Include="threadpool.h" />
+    <ClInclude Include="timer.h" />
     <ClInclude Include="vec.h" />
   </ItemGroup>
   <ItemGroup>

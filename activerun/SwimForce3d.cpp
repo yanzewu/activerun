@@ -20,7 +20,7 @@ void SwimForce3d::init(const Dict& params, System& system) {
 		printf("Error: PeR not found\n");
 		throw;
 	}
-    printf("Rotation Peclet=%.4f", Pe_R[0]);
+    printf("Rotation Peclet=%.4f\n", Pe_R[0]);
 
 	brownian_rotation = (bool)params.get("brownian", 1.0);
 	if (brownian_rotation) {
@@ -163,14 +163,6 @@ void SwimForce3d::update_cache(const System& system, const Context& context) {
 		torque_coeff_cache[i] = sqrt(
 			24.0 * zeta_R[i] * zeta_R[i] / tau_R[i] / context.timestep);
 	}
-}
-
-double SwimForce3d::compute_pressure(const State& state, const std::vector<Vec>& force_buffer) {
-	return 0.0;
-}
-
-double SwimForce3d::compute_energy(const State& state) {
-	return 0.0;
 }
 
 #endif // THREE_DIMENSION

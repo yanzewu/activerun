@@ -53,10 +53,6 @@ public:
 
 	void mp_update(FixedThreadPool&, const State& state, std::vector<Vec>& force_buffer);
 
-	double compute_pressure(const State&, const std::vector<Vec>& force);
-
-	double compute_energy(const State&);
-
 	void update_cache(const System&, const Context&);
 };
 
@@ -98,10 +94,6 @@ public:
 	void mp_update(FixedThreadPool&, const State&, std::vector<Vec>& foce_buffer);
 
 	void update_cache(const System&, const Context&);
-
-	double compute_pressure(const State&, const std::vector<Vec>& force_buffer);
-
-	double compute_energy(const State&);
 };
 
 
@@ -141,10 +133,6 @@ public:
 	void mp_update(FixedThreadPool&, const State&, std::vector<Vec3>& foce_buffer);
 
 	void update_cache(const System&, const Context&);
-
-	double compute_pressure(const State&, const std::vector<Vec3>& force_buffer);
-
-	double compute_energy(const State&);
 };
 
 
@@ -169,7 +157,7 @@ public:
 
 	void init(const Dict&, const System&);
 
-	// initialize parallel components. must called after init.
+	// initialize parallel components. must be called after init.
 	void init_mpi(int thread_count);
 
 	void update_ahead(State&, std::vector<Vec>&);
@@ -184,10 +172,10 @@ public:
 	void update_later(std::vector<Vec>& F);
 
 	void update_cache(const System& system, const Context&);
+    
+    double max_cutoff()const;
 
-	double compute_pressure(const State&);
-
-	double compute_energy(const State&);
+    double compute_energy(const State&);
 
 private:
 	// calculate a btch of column: INSIDE MULTITHREAD

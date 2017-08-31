@@ -83,11 +83,3 @@ void BrownianForce::update_cache(const System& system, const Context& context) {
 	}
 }
 
-double BrownianForce::compute_pressure(const State& state, const std::vector<Vec>& force) {
-	return 0.0;
-}
-
-double BrownianForce::compute_energy(const State& state) {
-	return 2 * temperature;
-}
-
