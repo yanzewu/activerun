@@ -187,7 +187,7 @@ int main(int argc, char* argv[]) {
     SwimForce3d force_swim;
 #endif // !THREE_DIMENSION
 
-    bool has_swim = std::accumulate(system.atom_type.begin(), system.atom_type.end(), 1) > 0;
+    bool has_swim = std::count(system.atom_type.begin(), system.atom_type.end(), 1) > 0;
     std::vector<int> group_swim(system.atom_num, 0);
     std::vector<int> group_passive(system.atom_num, 0);
     for (size_t i = 0; i < system.atom_num; i++) {
