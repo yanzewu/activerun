@@ -1,7 +1,20 @@
-#include "activerun.h"
-#include "timer.h"
+
+/* Written by Yanze Wu @2017 */
+
+#include "Compute.h"
+#include "Context.h"
+#include "Dumper.h"
+#include "Force.h"
+#include "Input.h"
+#include "Integrator.h"
 #include "Serializer.h"
+#include "System.h"
+#include "Thermo.h"
+#include "timer.h"
+
+#ifdef READ_LEGACY_INPUT
 #include "old_input.h"
+#endif 
 
 void set_default_value(Serializer& config) {
     
@@ -109,10 +122,14 @@ int read_input(int argc, char* argv[], Serializer& config) {
         config["input_file"] = std::string(argv[2]);
     }
     else {
+#ifdef READ_LEGACY_INPUT
         if (argc >= 3) {
             config["data_file"] = std::string(argv[2]);
         }
         return read_legacy_input(argv[1], config);
+#else
+        return 1;
+#endif 
     }
 
     return 0;
@@ -170,11 +187,19 @@ int main(int argc, char* argv[]) {
     SwimForce3d force_swim;
 #endif // !THREE_DIMENSION
 
-    bool has_swim = std::count(system.atom_type.begin(), system.atom_type.end(), 1) > 0;
+    bool has_swim = std::accumulate(system.atom_type.begin(), system.atom_type.end(), 1) > 0;
+    std::vector<int> group_swim(system.atom_num, 0);
+    std::vector<int> group_passive(system.atom_num, 0);
+    for (size_t i = 0; i < system.atom_num; i++) {
+        group_swim[i] = system.atom_type[i] == 1 ? 1 : 0;
+        group_passive[i] = group_swim[i] ? 0 : 1;
+    }
+
     size_t swim_start = swim_param["swim_start"];
 
 	if (has_swim) {
         force_swim.init(fix_swim_param, system);
+        force_swim.group_cache = &group_swim[0];
 	}
 
     MorseForce force_morse;
@@ -219,33 +244,29 @@ int main(int argc, char* argv[]) {
 
     size_t step_begin = config["current_step"];
 
-    std::string thermo_file = thermo_param["thermo_file"].get<std::string>().c_str();
     bool using_thermo = thermo_param["using_thermo"];
-    size_t thermo_step = thermo_param["thermo_step"];
-    size_t thermo_start = thermo_param["thermo_start"];
-    int thermo_ave_range = thermo_param["average_range"];
-    int thermo_ave_step = thermo_param["average_step"];
-
-    if (thermo_start < step_begin) {
-        printf("Warning: thermo_start too small (%zd), using first frame (%zd) instead.\n", thermo_start, context.current_step);
-        thermo_start = step_begin;
-    }
+    std::string thermo_file = thermo_param["thermo_file"].get<std::string>().c_str();   // thermo output file
+    
+    ThermoCounter thermocounter;
+    thermocounter.init(thermo_param);
+    thermocounter.check_start(step_begin);
 
     std::vector<double> pressure(3, 0.0);
     double temperature;
-    ThermoStat thermostat;
-    int count = 0;
 
-    LineDumper thermodumper(thermo_file.c_str(), { "P_Brown", "P_Swim", "P_Morse", "Temp" }, true, is_restart);
+    LineDumper thermodumper(thermo_file.c_str(), { "P_Brown", "P_Swim", "P_Morse_passive", "P_Morse_active", "Temp" }, true, is_restart);
+    FixPressureComputer p_brown, p_swim;
+    p_brown.init();
+    if (has_swim) {
+        p_swim.init();
+        p_swim.group_cache = &group_swim[0];
+    }
 
     // cache
 
     printf("\nInitializing...\n");
 
     integrator.update_cache(system, context);
-    if (using_thermo) {
-	    thermostat.update_cache(system);
-    }
     force_brown.update_cache(system, context);
     if (has_swim) {
 		force_swim.update_cache(system, context);
@@ -272,27 +293,31 @@ int main(int argc, char* argv[]) {
     int global_seed = config["global_seed"];
 	set_random_seed(global_seed);
 
-
     // timer
 
     Timer timer;
     timer.init({ "NeighList", "Force", "Integrator" });
     int timer_step = timer_param["sample_step"];
 
+    bool do_thermo_sample = false;
+    bool do_thermo_output = false;
+
+    // start!
+
     for (context.current_step = step_begin; context.current_step < context.total_steps; context.current_step++) {
 
         if (using_thermo) {
-            if (context.current_step == thermo_start) {
+            if (thermocounter.is_thermo_init_step(context.current_step)) {
                 context.pbc.reset_location();
                 context.pbc.update_image(state.pos);
 
-                thermostat.init(context, state);
-                thermostat.compute_pressure = { 1, 1, 1 };
-                thermostat.compute_temperature = false;
-                integrator.compute_temperature = true;
-                integrator.update_cache(system, context);
+                p_brown.update_cache(system, context);
+                if (has_swim)p_swim.update_cache(system, context);
                 temperature = 0.0;
             }
+
+            do_thermo_sample = thermocounter.is_thermo_sample_step(context.current_step + 1);
+            do_thermo_output = thermocounter.is_thermo_output_step(context.current_step + 1);
         }
 
         if (context.current_step % timer_step == 0) timer.set_checkpoint(-1);
@@ -312,9 +337,8 @@ int main(int argc, char* argv[]) {
 
         if (context.current_step % timer_step == 0) timer.set_checkpoint(0);
 
-		for (auto& fb : context.force_buffer) {
-			memset(&fb[0], 0, sizeof(Vec) * fb.size());
-		}
+        context.clear_buffer();
+
         //try {
 		force_morse.mp_update(context.pool, state, context);    // morse force must update first
         /*
@@ -341,34 +365,24 @@ int main(int argc, char* argv[]) {
             trajdumper.dump(system, state, context.current_step + 1);
         }
 
-        if (using_thermo) {
-            if (context.current_step + 1 >= thermo_start + thermo_ave_range / 2) {
-                int step_overhead = (context.current_step + 1 + thermo_ave_range / 2 - thermo_start) % thermo_step;
-                if (step_overhead <= thermo_ave_range) {
-                    if (step_overhead % thermo_ave_step == 0) {
-                        count++;
-                        context.pbc.update_image(state.pos);
-                        thermostat.update(context, integrator.velocity_cache);
-                        for (size_t i = 0; i < pressure.size(); i++) {
-                            pressure[i] += thermostat.pressure_cache[i];
-                        }
-                        temperature += integrator.update_temperature();
-                    }
-                }
-                
-                if (step_overhead == thermo_ave_range) {
-                    thermodumper.dump({
-                        pressure[0] / count,
-                        pressure[1] / count,
-                        pressure[2] / count,
-                        temperature / count },
-                        context.current_step + 1 - thermo_ave_range/2);
-                    memset(&pressure[0], 0, pressure.size() * sizeof(double));
-                    temperature = 0.0;
-                    count = 0;
-                }
-            }
+        if (do_thermo_sample) {
+            context.pbc.update_image(state.pos);
+            pressure[0] = p_brown.compute_pressure(context, 0);
+            if (has_swim)pressure[1] = p_swim.compute_pressure(context, 1);
+            temperature += integrator.update_temperature();
         }
+
+        if (do_thermo_output) {
+            thermodumper.dump({
+                pressure[0] / thermocounter.sample_count(),
+                pressure[1] / thermocounter.sample_count(),
+                pressure[2] / thermocounter.sample_count(),
+                temperature / thermocounter.sample_count() },
+                thermocounter.last_thermo_step(context.current_step + 1));
+            memset(&pressure[0], 0, pressure.size() * sizeof(double));
+            temperature = 0.0;
+        }
+            
     }
 
     timer.print((context.current_step - step_begin) / timer_step, context.current_step - step_begin);

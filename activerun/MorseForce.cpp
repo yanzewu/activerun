@@ -212,7 +212,7 @@ double MorseForce::max_cutoff()const {
     return cutoff_global;
 }
 
-double MorseForce::compute_energy(const State& state) {
+double MorseForce::potential_energy() {
 	return energy_cache;
 }
 

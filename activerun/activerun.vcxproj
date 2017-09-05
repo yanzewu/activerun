@@ -22,7 +22,7 @@
     <VCProjectVersion>15.0</VCProjectVersion>
     <ProjectGuid>{C606C801-49EB-4A6C-9E34-21E92BAA721A}</ProjectGuid>
     <RootNamespace>activerun</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.15063.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -127,8 +127,8 @@
     <ClCompile Include="SwimForce3d.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="activerun.h" />
     <ClInclude Include="arrayutil.h" />
+    <ClInclude Include="Compute.h" />
     <ClInclude Include="Context.h" />
     <ClInclude Include="defines.h" />
     <ClInclude Include="dict.h" />
@@ -144,7 +144,7 @@
     <ClInclude Include="pbc.h" />
     <ClInclude Include="Serializer.h" />
     <ClInclude Include="System.h" />
-    <ClInclude Include="thermostat.h" />
+    <ClInclude Include="Thermo.h" />
     <ClInclude Include="threadpool.h" />
     <ClInclude Include="timer.h" />
     <ClInclude Include="vec.h" />

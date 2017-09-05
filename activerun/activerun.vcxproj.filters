@@ -50,9 +50,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="thermostat.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Input.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -92,9 +89,6 @@
     <ClInclude Include="Context.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="activerun.h">
-      <Filter>util</Filter>
-    </ClInclude>
     <ClInclude Include="dict.h">
       <Filter>util</Filter>
     </ClInclude>
@@ -111,6 +105,12 @@
       <Filter>util</Filter>
     </ClInclude>
     <ClInclude Include="old_input.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Compute.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Thermo.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

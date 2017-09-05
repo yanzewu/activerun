@@ -63,6 +63,13 @@ struct Context {
 		}
 	}
 
+    void clear_buffer() {
+        for (auto& fb : force_buffer) {
+            memset(&fb[0], 0, sizeof(Vec) * fb.size());
+        }
+
+    }
+
 	~Context() {
 		delete neigh_list;
 	}

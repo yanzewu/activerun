@@ -35,9 +35,7 @@ public:
 
 	bool using_thread;
 
-    std::vector<int> group_cache;
-    std::vector<double> force_coeff_cache;
-    std::vector<Vec> random_cache;
+    int* group_cache;
 
 	BrownianForce();
 
@@ -54,6 +52,12 @@ public:
 	void mp_update(FixedThreadPool&, const State& state, std::vector<Vec>& force_buffer);
 
 	void update_cache(const System&, const Context&);
+
+private:
+
+    std::vector<double> force_coeff_cache;
+    std::vector<Vec> random_cache;
+
 };
 
 
@@ -65,21 +69,10 @@ public:
     int my_type;
 
 	bool using_thread;
-
     bool brownian_rotation;
 
-    std::vector<double> Pe_R;
-	std::vector<double> Pe_S;
+    int* group_cache;
 
-    std::vector<int> group_cache;
-
-	std::vector<double> angle_cache;
-
-    std::vector<double> torque_coeff_cache;
-    std::vector<double> angular_momentum_cache;
-    std::vector<double> force_coeff_cache;
-    std::vector<double> rot_viscosity_cache;
-    std::vector<double> rot_coeff_cache;
 
 	SwimForce();
 
@@ -94,6 +87,18 @@ public:
 	void mp_update(FixedThreadPool&, const State&, std::vector<Vec>& foce_buffer);
 
 	void update_cache(const System&, const Context&);
+
+private:
+
+    std::vector<double> Pe_R;
+	std::vector<double> Pe_S;
+
+	std::vector<double> angle_cache;            // angle of atom
+    std::vector<double> angular_momentum_cache; // angular momentum of atom
+    std::vector<double> force_coeff_cache;      // swim force
+    std::vector<double> rot_coeff_cache;        // dt/zetaR
+    std::vector<double> torque_coeff_cache;     // magnitude of torque. T=T0*rand(-0.5,0.5)
+
 };
 
 
@@ -104,21 +109,9 @@ public:
 	int my_type;
 
 	bool using_thread;
-
 	bool brownian_rotation;
 
-	std::vector<double> Pe_R;
-	std::vector<double> Pe_S;
-
-	std::vector<int> group_cache;
-
-	std::vector<Vec3> direct_cache;
-	std::vector<Vec3> angular_momentum_cache;
-
-	std::vector<double> torque_coeff_cache;
-	std::vector<double> force_coeff_cache;
-	std::vector<double> rot_viscosity_cache;
-	std::vector<double> rot_coeff_cache;
+	int* group_cache;
 
 	SwimForce3d();
 
@@ -133,6 +126,18 @@ public:
 	void mp_update(FixedThreadPool&, const State&, std::vector<Vec3>& foce_buffer);
 
 	void update_cache(const System&, const Context&);
+
+private:
+
+	std::vector<double> Pe_R;
+	std::vector<double> Pe_S;
+
+	std::vector<Vec3> angular_momentum_cache;   // angular momentum
+	std::vector<Vec3> direct_cache;             // direction of axis
+	std::vector<double> force_coeff_cache;      // swim force
+    std::vector<double> rot_coeff_cache;        // dt/zetaR
+	std::vector<double> torque_coeff_cache;     // magnitude of torque
+
 };
 
 
@@ -151,7 +156,7 @@ public:
 
 	/* Cached Data */
 
-    std::vector<int> group_cache;
+    int* group_cache;
 
 	MorseForce();
 
@@ -175,7 +180,9 @@ public:
     
     double max_cutoff()const;
 
-    double compute_energy(const State&);
+    double potential_energy();
+
+    double potential_pressure();
 
 private:
 	// calculate a btch of column: INSIDE MULTITHREAD
@@ -200,6 +207,8 @@ private:
 	std::vector<std::vector<size_t> > neigh_cache;
 	std::vector<std::vector<Vec> > force_cache;
 	std::vector<std::vector<Vec2d> > pair_cache;
+
+    std::vector<std::vector<Vec> > pressure_cache;
 };
 
 

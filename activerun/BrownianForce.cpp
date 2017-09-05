@@ -18,7 +18,6 @@ void BrownianForce::init(const Dict& params, System& system) {
 	temperature = params.get("temp", 1.0);
 	printf("Temperature=%.5g\n", temperature);
 
-	group_cache.resize(system.atom_num);
 	force_coeff_cache.resize(system.atom_num);
 	random_cache.resize(system.atom_num);
 

@@ -32,7 +32,6 @@ void SwimForce::init(const Dict& params, System& system) {
 
 	my_type = (int)params.get("type", 1.0);
 	printf("Swim atom type: %d\n", my_type);
-	group_cache.resize(system.atom_num);
 
 	int rand_seed = (int)params.get("init_seed", 0.0);
 	printf("Randomize initial configuration...\nseed=%d\n", rand_seed);
@@ -46,7 +45,6 @@ void SwimForce::init(const Dict& params, System& system) {
 	torque_coeff_cache.resize(system.atom_num);
 	force_coeff_cache.resize(system.atom_num);
 	angular_momentum_cache.resize(system.atom_num);
-	rot_viscosity_cache.resize(system.atom_num);
 	rot_coeff_cache.resize(system.atom_num);
 
 	// zeta = 6 pi eta r^2
@@ -108,12 +106,6 @@ void SwimForce::mp_update(FixedThreadPool& pool, const State& state, std::vector
 }
 
 void SwimForce::update_cache(const System& system, const Context& context) {
-
-	// group cache
-	for (int i = 0; i < system.atom_num; i++) {
-		if (system.atom_type[i] == 1)group_cache[i] = 1;
-		else group_cache[i] = 0;
-	}
 
 	const std::vector<double>& atom_size = system.get_attr("size");
 	const std::vector<double>& zeta = system.get_attr("zeta");

@@ -1,4 +1,8 @@
 #pragma once
+
+#ifndef ACTIVERUN_SERIALIZER_H
+#define ACTIVERUN_SERIALIZER_H
+
 #include <string>
 #include <fstream>
 #include "external/json.hpp"
@@ -89,3 +93,5 @@ private:
 
     json root;
 };
+
+#endif  
