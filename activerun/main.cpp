@@ -304,6 +304,7 @@ int main(int argc, char* argv[]) {
     // random seed
 
     int global_seed = config["global_seed"];
+    if (global_seed == -1)global_seed = time(0);
 	set_random_seed(global_seed);
 
     // building force cache
