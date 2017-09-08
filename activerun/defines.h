@@ -4,7 +4,7 @@
  * Please modify this file, not other files.
 */
 
-// #define THREE_DIMENSION  // 3d system
+#define THREE_DIMENSION  // 3d system
 // #define CUSTOM_RANDOM    // using custom random function instead of rand() in stdlib
 // #define HARDSPHERE       // using hardshere [not available]
 #define READ_LEGACY_INPUT   // enables legacy input file

@@ -67,7 +67,7 @@ void MorseForce::update_ahead(double compute_pe) {
     if (calculate_pressure) for (auto& pc : pressure_cache)memset(&pc[0], 0, 3 * sizeof(double));
 #endif 
 	for (auto& fc : force_cache) {
-        std::fill(fc.begin(), fc.end(), Vec2());
+        std::fill(fc.begin(), fc.end(), Vec());
 	}
     this->calculate_energy = compute_pe;
     if (compute_pe) vec_reset(pe_cache);

@@ -24,12 +24,7 @@ public:
     }
 
     void update_cache(const System& system, const Context& context) {
-#ifndef THREE_DIMENSION
-        volume = system.box[0] * system.box[1];
-#else
-        volume = system.box[0] * system.box[1] * system.box[2];
-#endif // !THREE_DIMENSION
-
+        volume = system.volume();
         init_pos = context.pbc.image_cache;
     }
 
@@ -71,11 +66,7 @@ public:
     }
 
     void update_cache(const System& system, const Context& context) {
-#ifndef THREE_DIMENSION
-        volume = system.box[0] * system.box[1];
-#else
-        volume = system.box[0] * system.box[1] * system.box[2];
-#endif // !THREE_DIMENSION
+        volume = system.volume();
         box = system.box;
     }
 
