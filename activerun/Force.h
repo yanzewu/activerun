@@ -146,7 +146,18 @@ public:
 
 	/* Fixed Data */
 
+#ifdef PRESSURE_BREAKDOWN
+
 	bool calculate_energy;
+    bool calculate_pressure;
+
+    double pressure[3];
+    double energy[3];
+
+    std::vector<std::vector<double> > pressure_cache;
+    std::vector<std::vector<double> > energy_cache;
+
+#endif
 
 	int pool_size;
     double cutoff_relative;
@@ -186,20 +197,18 @@ public:
 
 private:
 	// calculate a btch of column: INSIDE MULTITHREAD
-	void update_batch(int start, int end, const State*, const PBCInfo*, const NeighbourList*, std::vector<size_t>* neigh_cache, std::vector<Vec>* force_cache);
+	void update_batch(int start, int end, const State*, const PBCInfo*, const NeighbourList*, std::vector<size_t>* neigh_cache, std::vector<Vec>* force_cache, int tid);
 
 	// calculate single column: INSIDE MULTITHREAD
-	void update_column(int i, const State*, const PBCInfo*, const NeighbourList*, std::vector<size_t>* neigh_cache, std::vector<Vec>* force_cache);
+	void update_column(int i, const State*, const PBCInfo*, const NeighbourList*, std::vector<size_t>* neigh_cache, std::vector<Vec>* force_cache, int tid);
 
 	// calculate a pair
-	void update_pair(size_t id1, size_t id2, const Vec& d, const State&, std::vector<Vec>& force_cache);
+	void update_pair(size_t id1, size_t id2, const Vec& d, const State&, std::vector<Vec>& force_cache, int tid);
 
 	double pair_force_div_r(double r, double exp_cache);
 
 	double pair_energy(double r, double exp_cache);
 
-
-	double energy_cache;
 	double cutoff_global2;	// square of cutoff_global
 
 	std::vector<double> atom_radius_cache;
@@ -208,7 +217,6 @@ private:
 	std::vector<std::vector<Vec> > force_cache;
 	std::vector<std::vector<Vec2d> > pair_cache;
 
-    std::vector<std::vector<Vec> > pressure_cache;
 };
 
 

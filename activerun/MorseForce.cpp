@@ -25,9 +25,6 @@ void MorseForce::init(const Dict& params, const System& system) {
 	cutoff_relative = params.get("cutoff", 1.25);
 
 	printf("kappa=%.5g\nUm=%.5g\ncutoff=%.4f\n", kappa, Um, cutoff_relative);
-
-	calculate_energy = (bool)params.get("energy", 0);
-	printf(calculate_energy ? "Using energy cache\n" : "No energy cache\n");
 }
 
 void MorseForce::init_mpi(int thread_count) {
@@ -49,6 +46,15 @@ void MorseForce::init_mpi(int thread_count) {
 		nc.reserve(64);
 	}
 
+#ifdef PRESSURE_BREAKDOWN
+    pressure_cache.resize(pool_size);
+    energy_cache.resize(pool_size);
+
+    for (auto& pc : pressure_cache)pc.resize(3);
+    for (auto& ec : energy_cache)ec.resize(3);
+
+#endif // PRESSURE_BREAKDOWN
+
 }
 
 void MorseForce::update_ahead(State& state, std::vector<Vec>& F) {
@@ -56,7 +62,11 @@ void MorseForce::update_ahead(State& state, std::vector<Vec>& F) {
 }
 
 void MorseForce::mp_update(FixedThreadPool& pool, const State& state, const Context& context) {
-	energy_cache = 0.0;
+
+#ifdef PRESSURE_BREAKDOWN
+    if (calculate_energy) for (auto& ec : energy_cache)memset(&ec[0], 0, 3 * sizeof(double));
+    if (calculate_pressure) for (auto& pc : pressure_cache)memset(&pc[0], 0, 3 * sizeof(double));
+#endif 
 
 	for (auto& fc : force_cache) {
 		memset(&fc[0], 0, sizeof(Vec)*fc.size());
@@ -68,7 +78,7 @@ void MorseForce::mp_update(FixedThreadPool& pool, const State& state, const Cont
 			pool.submit(std::bind(&MorseForce::update_batch,
 				this,
 				1 + context.neigh_list->box_num[0] * i / pool_size, 1 + context.neigh_list->box_num[0] * (i + 1) / pool_size,
-				&state, &context.pbc, context.neigh_list, &neigh_cache[i], &force_cache[i]), true);
+				&state, &context.pbc, context.neigh_list, &neigh_cache[i], &force_cache[i], i), true);
 		}
 	}
 	else {
@@ -78,23 +88,28 @@ void MorseForce::mp_update(FixedThreadPool& pool, const State& state, const Cont
 
 void MorseForce::update(const State& state, const Context& context) {
 	update_batch(1, context.neigh_list->box_num[0] + 1,
-		&state, &context.pbc, context.neigh_list, &neigh_cache[0], &force_cache[0]);
+		&state, &context.pbc, context.neigh_list, &neigh_cache[0], &force_cache[0], 0);
 }
 
 void MorseForce::update_later(std::vector<Vec>& F) {
 	for (const auto& fc : force_cache) {
 		array_add(fc, F);
 	}
+
+#ifdef PRESSURE_BREAKDOWN
+    if (calculate_pressure)  for (const auto& pc : pressure_cache) array_add_double(&pc[0], pressure, 3);
+    if (calculate_energy) for (const auto& ec : energy_cache) array_add_double(&ec[0], energy, 3);
+#endif 
 }
 
 void MorseForce::update_batch(int start, int end, const State* state, const PBCInfo* pbc, const NeighbourList* neigh_list,
-	std::vector<size_t>* neigh_cache, std::vector<Vec>* F) {
+	std::vector<size_t>* neigh_cache, std::vector<Vec>* F, int tid) {
 	for (int i = start; i < end; i++) {
-		update_column(i, state, pbc, neigh_list, neigh_cache, F);
+		update_column(i, state, pbc, neigh_list, neigh_cache, F, tid);
 	}
 }
 
-void MorseForce::update_column(int i, const State* state, const PBCInfo* pbc, const NeighbourList* neigh_list, std::vector<size_t>* neigh_cache, std::vector<Vec>* F) {
+void MorseForce::update_column(int i, const State* state, const PBCInfo* pbc, const NeighbourList* neigh_list, std::vector<size_t>* neigh_cache, std::vector<Vec>* F, int tid) {
 
 	for (int j = 1; j <= neigh_list->box_num[1]; j++) 
 #ifdef THREE_DIMENSION
@@ -138,7 +153,7 @@ void MorseForce::update_column(int i, const State* state, const PBCInfo* pbc, co
 #endif // THREE_DIMENSION
 
 					)continue;
-				update_pair(id1, id2, d, *state, *F);
+				update_pair(id1, id2, d, *state, *F, tid);
 			}
 
 		for (const auto& id1 : *cell1)
@@ -151,13 +166,13 @@ void MorseForce::update_column(int i, const State* state, const PBCInfo* pbc, co
 					|| abs(d[2]) > cutoff_global
 #endif // THREE_DIMENSION
 					)continue;
-				update_pair(id1, id2, d, *state, *F);
+				update_pair(id1, id2, d, *state, *F, tid);
 			}
 	}
 
 }
 
-void MorseForce::update_pair(size_t id1, size_t id2, const Vec& d, const State& state, std::vector<Vec>& F) {
+void MorseForce::update_pair(size_t id1, size_t id2, const Vec& d, const State& state, std::vector<Vec>& F, int tid) {
 	
 	double r2 = d.norm2();
 	if (r2 > cutoff_global2)return;
@@ -182,7 +197,23 @@ void MorseForce::update_pair(size_t id1, size_t id2, const Vec& d, const State& 
 	F[id1] -= f_temp;
 	F[id2] += f_temp;
 
-	if (calculate_energy)energy_cache += pair_energy(r, exp_cache);
+#ifdef PRESSURE_BREAKDOWN
+
+    int output_id;
+    if (calculate_energy || calculate_pressure) {
+        if (group_cache[id1] && group_cache[id2])output_id = 2;
+        else if (group_cache[id1] || group_cache[id2])output_id = 1;
+        else output_id = 0;
+    }
+
+    if (calculate_pressure) {
+        pressure_cache[tid][output_id] += f_temp.dot(d);
+    }
+
+    if (calculate_energy) {
+        energy_cache[tid][output_id] += pair_energy(r, exp_cache);
+    }
+#endif
 }
 
 double MorseForce::pair_force_div_r(double r, double exp_cache) {
@@ -211,8 +242,3 @@ void MorseForce::update_cache(const System& system, const Context& context) {
 double MorseForce::max_cutoff()const {
     return cutoff_global;
 }
-
-double MorseForce::potential_energy() {
-	return energy_cache;
-}
-

@@ -90,6 +90,13 @@ public:
         attribute_names[name] = index;
     }
 
+    double volume()const {
+#ifdef THREE_DIMENSION
+        return box[0] * box[1] * box[2];
+#else
+        return box[0] * box[1];
+#endif 
+    }
 
     size_t atom_num;
 

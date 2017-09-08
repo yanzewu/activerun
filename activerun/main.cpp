@@ -160,8 +160,13 @@ int main(int argc, char* argv[]) {
     Dict integrator_param = { { "compute_temp", config["thermo"]["using_thermo"] && config["thermo"]["compute_temp"] ? 1.0 : 0.0 } };
     Dict time_param = config.get_dict("run");
 
+    /* Global configure variables */
+
     bool is_restart = config["is_restart"];
     std::string data_file = config["data_file"];
+    size_t step_begin = config["current_step"];
+
+    /* Datafile input */
 
     DataFile datafile;
     datafile.read_data(data_file.c_str());
@@ -174,18 +179,7 @@ int main(int argc, char* argv[]) {
 
     Context context;
 
-    // prepare forces
-
-    context.init_force_buffer(system, 3); // 3 forces
-
-    BrownianForce force_brown;
-	force_brown.init(config.get_dict("BrownianForce"), system);
-    
-#ifndef THREE_DIMENSION
-    SwimForce force_swim;
-#else
-    SwimForce3d force_swim;
-#endif // !THREE_DIMENSION
+    /* group swim type 1 */
 
     bool has_swim = std::count(system.atom_type.begin(), system.atom_type.end(), 1) > 0;
     std::vector<int> group_swim(system.atom_num, 0);
@@ -195,15 +189,37 @@ int main(int argc, char* argv[]) {
         group_passive[i] = group_swim[i] ? 0 : 1;
     }
 
-    size_t swim_start = swim_param["swim_start"];
+    /* Forces */
 
+    context.init_force_buffer(system, 3); // 3 forces
+
+    /* fix 0 all langevin [BronwianForce.temp] [BrownianForce.temp] 0.0 */
+
+    BrownianForce force_brown;
+	force_brown.init(config.get_dict("BrownianForce"), system);
+    
+    /* fix 1 swim active [SwimForce.temp] [SwimForce.temp] 0.0 */
+
+#ifndef THREE_DIMENSION
+    SwimForce force_swim;
+#else
+    SwimForce3d force_swim;
+#endif // !THREE_DIMENSION
+    size_t swim_start = swim_param["swim_start"];
 	if (has_swim) {
         force_swim.init(fix_swim_param, system);
         force_swim.group_cache = &group_swim[0];
 	}
 
+	double max_fix_cutoff = *std::max_element(system.get_attr("size").begin(), system.get_attr("size").end());
+
+    /* */
+
     MorseForce force_morse;
 	force_morse.init(pair_param, system);
+    double max_pair_cutoff = force_morse.max_cutoff();
+
+    /* Acceleration */
 
     double cell_size = util_param["cell_size"];
     int np = util_param["np"];
@@ -211,8 +227,7 @@ int main(int argc, char* argv[]) {
 
 	context.init_timestep(time_param);
     context.init_pbc(system, true);
-	double max_atom_size = *std::max_element(system.get_attr("size").begin(), system.get_attr("size").end());
-    context.init_neighlist(system.box, cell_size * std::max(force_morse.max_cutoff(), max_atom_size));
+    context.init_neighlist(system.box, cell_size * std::max(max_pair_cutoff, max_fix_cutoff));
 	context.init_multicore(np, 2); // force 2 is paired force
 
 	// mpi
@@ -233,38 +248,62 @@ int main(int argc, char* argv[]) {
     LangevinIntegrator integrator;
     integrator.init(integrator_param, system, context);
 
-    // dump
+    /* dump 1 all custom [dump_step] [dump_file] id mol type x y z */
 
-    std::string dump_file = dump_param["dump_file"].get<std::string>().c_str();
+    std::string dump_file = dump_param["dump_file"].get<std::string>();
     size_t dump_step = dump_param["dump_step"].get<size_t>();
 
     TrajDumper trajdumper(dump_file.c_str(), is_restart);
 
-    // thermo
+    /* compute p_brown all pressure 0 */
+    /* compute p_swim swim pressure 1 */
 
-    size_t step_begin = config["current_step"];
-
-    bool using_thermo = thermo_param["using_thermo"];
-    std::string thermo_file = thermo_param["thermo_file"].get<std::string>().c_str();   // thermo output file
-    
-    ThermoCounter thermocounter;
-    thermocounter.init(thermo_param);
-    thermocounter.check_start(step_begin);
-
-    std::vector<double> pressure(3, 0.0);
-    double temperature;
-
-    LineDumper thermodumper(thermo_file.c_str(), { "P_Brown", "P_Swim", "P_Morse_passive", "P_Morse_active", "Temp" }, true, is_restart);
     FixPressureComputer p_brown, p_swim;
     p_brown.init();
     if (has_swim) {
         p_swim.init();
         p_swim.group_cache = &group_swim[0];
     }
+#ifndef PRESSURE_BREAKDOWN
+    /* compute p_morse all pressure pair */
 
-    // cache
+    PressureComputer p_morse;
+    p_morse.init(true);
+#else
+    std::vector<double> morse_pressure(3, 0.0), morse_energy(3, 0.0);
+#endif
 
-    printf("\nInitializing...\n");
+    /* thermo [thermo_file] */
+
+    bool using_thermo = thermo_param["using_thermo"];
+    std::string thermo_file = thermo_param["thermo_file"].get<std::string>();   // thermo output file
+    
+    ThermoCounter thermocounter;
+    thermocounter.init(thermo_param);
+    thermocounter.check_start(step_begin);
+
+#ifdef PRESSURE_BREAKDOWN
+    LineDumper thermodumper(thermo_file.c_str(), { "P_Brown", "P_Swim", "P_Morse", "P_Morse_pp", "P_Morse_aa", "P_Morse", "PE", "PE_pp", "PE_aa", "T" }, true, is_restart);
+#else
+    LineDumper thermodumper(thermo_file.c_str(), { "P_Brown", "P_Swim", "P_Morse", "T" }, true, is_restart);
+    std::vector<double> thermo_buffer(4, 0.0);
+#endif
+
+    /* timer normal every [sample_step] */
+
+    Timer timer;
+    timer.init({ "NeighList", "Force", "Integrator" });
+    int timer_step = timer_param["sample_step"];
+
+    bool do_thermo_sample = false;
+    bool do_thermo_output = false;
+
+    // random seed
+
+    int global_seed = config["global_seed"];
+	set_random_seed(global_seed);
+
+    // building force cache
 
     integrator.update_cache(system, context);
     force_brown.update_cache(system, context);
@@ -273,7 +312,7 @@ int main(int argc, char* argv[]) {
     }
     force_morse.update_cache(system, context);
 
-    // run
+    /* run [time.step] */
 
 	printf("\nStart running session...\n\n");
 
@@ -288,22 +327,6 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    // random seed
-
-    int global_seed = config["global_seed"];
-	set_random_seed(global_seed);
-
-    // timer
-
-    Timer timer;
-    timer.init({ "NeighList", "Force", "Integrator" });
-    int timer_step = timer_param["sample_step"];
-
-    bool do_thermo_sample = false;
-    bool do_thermo_output = false;
-
-    // start!
-
     for (context.current_step = step_begin; context.current_step < context.total_steps; context.current_step++) {
 
         if (using_thermo) {
@@ -313,12 +336,24 @@ int main(int argc, char* argv[]) {
 
                 p_brown.update_cache(system, context);
                 if (has_swim)p_swim.update_cache(system, context);
-                temperature = 0.0;
+#ifndef PRESSURE_BREAKDOWN
+                p_morse.update_cache(system, context);
+#endif
             }
-
             do_thermo_sample = thermocounter.is_thermo_sample_step(context.current_step + 1);
             do_thermo_output = thermocounter.is_thermo_output_step(context.current_step + 1);
         }
+
+#ifdef PRESSURE_BREAKDOWN
+        if (do_thermo_sample) {
+            force_morse.calculate_energy = true;
+            force_morse.calculate_pressure = true;
+        }
+        else {
+            force_morse.calculate_energy = false;
+            force_morse.calculate_pressure = false;
+        }
+#endif
 
         if (context.current_step % timer_step == 0) timer.set_checkpoint(-1);
 
@@ -367,25 +402,48 @@ int main(int argc, char* argv[]) {
 
         if (do_thermo_sample) {
             context.pbc.update_image(state.pos);
-            pressure[0] = p_brown.compute_pressure(context, 0);
-            if (has_swim)pressure[1] = p_swim.compute_pressure(context, 1);
-            temperature += integrator.update_temperature();
+            thermo_buffer[0] += p_brown.compute_pressure(context, 0);
+            if (has_swim)thermo_buffer[1] += p_swim.compute_pressure(context, 1);
+#ifndef PRESSURE_BREAKDOWN
+            thermo_buffer[2] += p_morse.compute_pressure(context, state, 2);
+#else
+            for (int i = 0; i < 3; i++)morse_pressure[i] += force_morse.pressure[i] / (DIMENSION * system.volume());
+            for (int i = 0; i < 3; i++)morse_energy[i] += force_morse.energy[i];
+#endif // !PRESSURE_BREAKDOWN
+            thermo_buffer[3] += integrator.update_temperature();
         }
 
         if (do_thermo_output) {
+#ifndef PRESSURE_BREAKDOWN
+            thermodumper.dump({
+                thermo_buffer[0] / thermocounter.sample_count(),
+                thermo_buffer[1] / thermocounter.sample_count(),
+                thermo_buffer[2] / thermocounter.sample_count(),
+                thermo_buffer[3] / thermocounter.sample_count() },
+                thermocounter.last_thermo_step(context.current_step + 1));
+#else
             thermodumper.dump({
                 pressure[0] / thermocounter.sample_count(),
                 pressure[1] / thermocounter.sample_count(),
-                pressure[2] / thermocounter.sample_count(),
+                morse_pressure[0] / thermocounter.sample_count(),
+                morse_pressure[1] / thermocounter.sample_count(),
+                (morse_pressure[0] + morse_pressure[1] + morse_pressure[2]) / thermocounter.sample_count(),
+                morse_energy[2] / thermocounter.sample_count(),
+                morse_energy[2] / thermocounter.sample_count(),
+                (morse_energy[0] + morse_energy[1] + morse_energy[2]) / thermocounter.sample_count(),
                 temperature / thermocounter.sample_count() },
                 thermocounter.last_thermo_step(context.current_step + 1));
-            memset(&pressure[0], 0, pressure.size() * sizeof(double));
-            temperature = 0.0;
+            memset(&morse_pressure[0], 0, 3 * sizeof(double));
+            memset(&morse_energy[0], 0, 3 * sizeof(double));
+#endif 
+            memset(&thermo_buffer[0], 0, thermo_buffer.size() * sizeof(double));
         }
             
     }
 
     timer.print((context.current_step - step_begin) / timer_step, context.current_step - step_begin);
+
+    /* write_restart [restart_file] */
 
     bool write_restart = restart_param["write_restart"];
 

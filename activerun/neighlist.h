@@ -76,6 +76,28 @@ public:
         copy_vec(at(box_num[0] + 1, box_num[1] + 1), at(1, 1));
 	}
 
+    void compute_ghost_pos(std::vector<size_t>& ghost_id, std::vector<Vec2d>& ghost_offset)const {
+
+        auto append_ghost = [&](const std::vector<size_t>& box, const Vec2d& offset, std::vector<size_t>& gid, std::vector<Vec2d>& goff) {
+            gid.insert(gid.end(), box.begin(), box.end());
+            goff.insert(goff.end(), box.size(), offset);
+        };
+
+        for (int i = 1; i <= box_num[0]; i++) {
+            append_ghost(at(i, 0), { 0, -1 }, ghost_id, ghost_offset);
+            append_ghost(at(i, box_num[1] + 1), { 0, 1 }, ghost_id, ghost_offset);
+        }
+        for (int i = 1; i <= box_num[1]; i++) {
+            append_ghost(at(0, i), { -1, 0 }, ghost_id, ghost_offset);
+            append_ghost(at(box_num[0] + 1, i), { 1, 0 }, ghost_id, ghost_offset);
+        }
+
+        append_ghost(at(0, 0), { -1, -1 }, ghost_id, ghost_offset);
+        append_ghost(at(0, box_num[1] + 1), { -1, 1 }, ghost_id, ghost_offset);
+        append_ghost(at(box_num[0] + 1, 0), { 1, -1 }, ghost_id, ghost_offset);
+        append_ghost(at(box_num[0] + 1, box_num[1] + 1), { 1, 1 }, ghost_id, ghost_offset);
+    }
+
     inline std::vector<size_t>& at(int x, int y) {
 //		if (y >= box_num_real[1])throw std::out_of_range(std::to_string(y));
         return cells[x * box_num_real[1] + y];
@@ -154,7 +176,6 @@ public:
 		}
 	}
 
-    // f*cking loop unroll
 	void synchronize_ghost() {
 
 		// xy - plane
@@ -211,6 +232,69 @@ public:
         copy_vec(at(0,              box_num[1] + 1, box_num[2] + 1), at(box_num[0], 1,          1));
         copy_vec(at(box_num[0] + 1, box_num[1] + 1, box_num[2] + 1), at(1,          1,          1));
 	}
+
+    void compute_ghost_pos(std::vector<size_t>& ghost_id, std::vector<Vec3d>& ghost_offset)const {
+
+        auto append_ghost = [&](const std::vector<size_t>& box, const Vec3d& offset, std::vector<size_t>& gid, std::vector<Vec3d>& goff) {
+            gid.insert(gid.end(), box.begin(), box.end());
+            goff.insert(goff.end(), box.size(), offset);
+        };
+        // xy - plane
+        for (int i = 1; i <= box_num[0]; i++)
+        for (int j = 1; j <= box_num[1]; j++) {
+            append_ghost(at(i, j, 0), { 0, 0, -1 }, ghost_id, ghost_offset);
+            append_ghost(at(i, j, box_num[2] + 1), { 0, 0, 1 }, ghost_id, ghost_offset);
+        }
+
+        // yz - plane
+        for (int i = 1; i <= box_num[1]; i++)
+        for (int j = 1; j <= box_num[2]; j++) {
+            append_ghost(at(0, i, j), { -1, 0, 0 }, ghost_id, ghost_offset);
+            append_ghost(at(box_num[0] + 1, i, j), { 1, 0, 0 }, ghost_id, ghost_offset);
+        }
+
+        // zx - plane
+        for (int i = 1; i <= box_num[2]; i++)
+        for (int j = 1; j <= box_num[0]; j++) {
+            append_ghost(at(j, 0, i), { 0, -1, 0 }, ghost_id, ghost_offset);
+            append_ghost(at(j, box_num[1] + 1, i), { 0, 1, 0 }, ghost_id, ghost_offset);
+        }
+
+        // z axis
+        for (int i = 1; i <= box_num[2]; i++) {
+            append_ghost(at(0, 0, i), { -1, -1, 0 }, ghost_id, ghost_offset);
+            append_ghost(at(0, box_num[1] + 1, i), { -1, 1, 0 }, ghost_id, ghost_offset);
+            append_ghost(at(box_num[0] + 1, 0, i), { 1, -1, 0 }, ghost_id, ghost_offset);
+            append_ghost(at(box_num[0] + 1, box_num[1] + 1, i), { 1, 1, 0 }, ghost_id, ghost_offset);
+        }
+
+        // x axis
+        for (int i = 1; i <= box_num[0]; i++) {
+            append_ghost(at(i, 0, 0), { 0, -1, -1 }, ghost_id, ghost_offset);
+            append_ghost(at(i, 0, box_num[2] + 1), { 0, -1, 1 }, ghost_id, ghost_offset);
+            append_ghost(at(i, box_num[1] + 1, 0), { 0, 1, -1 }, ghost_id, ghost_offset);
+            append_ghost(at(i, box_num[1] + 1, box_num[2] + 1), { 0, 1, 1 }, ghost_id, ghost_offset);
+        }
+
+        // y axis
+        for (int i = 1; i <= box_num[1]; i++) {
+            append_ghost(at(0, i, 0), { -1, 0, -1 }, ghost_id, ghost_offset);
+            append_ghost(at(box_num[0] + 1, i, 0), { 1, 0, -1 }, ghost_id, ghost_offset);
+            append_ghost(at(0, i, box_num[2] + 1), { -1, 0, 1 }, ghost_id, ghost_offset);
+            append_ghost(at(box_num[0] + 1, i, box_num[2] + 1), { 1, 0, 1 }, ghost_id, ghost_offset);
+        }
+
+        append_ghost(at(0, 0, 0), { -1, -1, -1 }, ghost_id, ghost_offset);
+        append_ghost(at(box_num[0] + 1, 0, 0), { 1, -1, -1 }, ghost_id, ghost_offset);
+        append_ghost(at(0, box_num[1] + 1, 0), { -1, 1, -1 }, ghost_id, ghost_offset);
+        append_ghost(at(0, 0, box_num[2] + 1), { -1, -1, 1 }, ghost_id, ghost_offset);
+        append_ghost(at(box_num[0] + 1, box_num[1] + 1, 0), { 1, 1, -1 }, ghost_id, ghost_offset);
+        append_ghost(at(box_num[0] + 1, 0, box_num[2] + 1), { 1, -1, 1 }, ghost_id, ghost_offset);
+        append_ghost(at(0, box_num[1] + 1, box_num[2] + 1), { -1, 1, 1 }, ghost_id, ghost_offset);
+        append_ghost(at(box_num[0] + 1, box_num[1] + 1, box_num[2] + 1), { 1, 1, 1 }, ghost_id, ghost_offset);
+
+    }
+
 
 	inline std::vector<size_t>& at(int x, int y, int z) {
 		return cells[(x * box_num_real[1] + y) * box_num_real[2] + z];

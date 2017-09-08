@@ -38,6 +38,53 @@ private:
     double volume;
 };
 
+class PressureComputer {
+public:
+
+    bool using_pbc;
+    int* group_cache;
+
+    void init(double using_pbc) {
+        this->using_pbc = using_pbc;
+        group_cache = nullptr;
+    }
+
+    double compute_pressure(const Context& context, const State& state, int force_id) {
+
+        double pressure = 0.0;
+
+        for (size_t j = 0; j < context.force_buffer[force_id].size(); j++) {
+            if (group_cache && !group_cache[j])continue;
+            pressure += context.force_buffer[force_id][j].dot(state.pos[j]);
+        }
+
+        std::vector<size_t> ghost;
+        std::vector<Vecd> offset;
+
+        context.neigh_list->compute_ghost_pos(ghost, offset);
+        for (size_t i = 0; i < ghost.size(); i++) {
+            if (group_cache && !group_cache[ghost[i]])continue;
+            pressure += context.force_buffer[force_id][ghost[i]].dot(state.pos[ghost[i]] + offset[i].to_float() * box);
+        }
+
+        return pressure / (DIMENSION * volume);
+    }
+
+    void update_cache(const System& system, const Context& context) {
+#ifndef THREE_DIMENSION
+        volume = system.box[0] * system.box[1];
+#else
+        volume = system.box[0] * system.box[1] * system.box[2];
+#endif // !THREE_DIMENSION
+        box = system.box;
+    }
+
+private:
+
+    double volume;
+    Vec box;
+};
+
 class KineticEnergyComputer {
 public:
 
