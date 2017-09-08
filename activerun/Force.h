@@ -146,11 +146,8 @@ public:
 
 	/* Fixed Data */
 
+
 #ifdef PRESSURE_BREAKDOWN
-
-	bool calculate_energy;
-    bool calculate_pressure;
-
     double pressure[3];
     double energy[3];
 
@@ -176,7 +173,8 @@ public:
 	// initialize parallel components. must be called after init.
 	void init_mpi(int thread_count);
 
-	void update_ahead(State&, std::vector<Vec>&);
+    // initialize cache for mp
+	void update_ahead(double compute_pe);
 
 	// update, submit job in parallel
 	void mp_update(FixedThreadPool&, const State&, const Context&);
@@ -191,9 +189,7 @@ public:
     
     double max_cutoff()const;
 
-    double potential_energy();
-
-    double potential_pressure();
+    double potential_energy()const;
 
 private:
 	// calculate a btch of column: INSIDE MULTITHREAD
@@ -217,6 +213,9 @@ private:
 	std::vector<std::vector<Vec> > force_cache;
 	std::vector<std::vector<Vec2d> > pair_cache;
 
+    std::vector<double> pe_cache;
+
+	bool calculate_energy;
 };
 
 

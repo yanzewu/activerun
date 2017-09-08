@@ -4,6 +4,8 @@
 #include "Context.h"
 #include <stdarg.h>
 
+#define FORMATTER "% .6g"
+
 void sprintf_vec(char* buffer, const Vec2& v) {
 	sprintf(buffer, "% .5g % .5g", v[0], v[1]);
 }
@@ -81,14 +83,14 @@ void LineDumper::dump(const std::vector<double>& value, const size_t& step) {
 	if (with_output) {
 		foprintf(ofile, "%zd", step);
 		for (const auto& v : value) {
-			foprintf(ofile, "\t% f", v);
+			foprintf(ofile, "\t" FORMATTER, v);
 		}
         foprintf(ofile, "\n");
 	}
 	else {
 		fprintf(ofile, "%zd", step);
 		for (const auto& v : value) {
-			fprintf(ofile, "\t% f", v);
+			fprintf(ofile, "\t" FORMATTER, v);
 		}
         fprintf(ofile, "\n");
 	}

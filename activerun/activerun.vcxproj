@@ -148,6 +148,7 @@
     <ClInclude Include="threadpool.h" />
     <ClInclude Include="timer.h" />
     <ClInclude Include="vec.h" />
+    <ClInclude Include="vecutil.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\.gitignore" />

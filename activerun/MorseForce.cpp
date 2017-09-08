@@ -1,6 +1,7 @@
 
 #include "Force.h"
 #include "arrayutil.h"
+#include "vecutil.h"
 
 
 MorseForce::MorseForce() {
@@ -35,11 +36,13 @@ void MorseForce::init_mpi(int thread_count) {
 		printf("Using %d threads\n", pool_size);
 		force_cache.resize(pool_size);
 		neigh_cache.resize(pool_size);
+        pe_cache.resize(pool_size);
 	}
 	else {
 		printf("Using main thread\n");
 		force_cache.resize(1);
 		neigh_cache.resize(1);
+        pe_cache.resize(1);
 	}
 
 	for (auto& nc : neigh_cache) {
@@ -57,20 +60,21 @@ void MorseForce::init_mpi(int thread_count) {
 
 }
 
-void MorseForce::update_ahead(State& state, std::vector<Vec>& F) {
-
-}
-
-void MorseForce::mp_update(FixedThreadPool& pool, const State& state, const Context& context) {
+void MorseForce::update_ahead(double compute_pe) {
 
 #ifdef PRESSURE_BREAKDOWN
     if (calculate_energy) for (auto& ec : energy_cache)memset(&ec[0], 0, 3 * sizeof(double));
     if (calculate_pressure) for (auto& pc : pressure_cache)memset(&pc[0], 0, 3 * sizeof(double));
 #endif 
-
 	for (auto& fc : force_cache) {
-		memset(&fc[0], 0, sizeof(Vec)*fc.size());
+        std::fill(fc.begin(), fc.end(), Vec2());
 	}
+    this->calculate_energy = compute_pe;
+    if (compute_pe) vec_reset(pe_cache);
+}
+
+void MorseForce::mp_update(FixedThreadPool& pool, const State& state, const Context& context) {
+
 
 	if (pool_size >= 1) { // using parallel
 
@@ -213,6 +217,8 @@ void MorseForce::update_pair(size_t id1, size_t id2, const Vec& d, const State& 
     if (calculate_energy) {
         energy_cache[tid][output_id] += pair_energy(r, exp_cache);
     }
+#else
+    if (calculate_energy) pe_cache[tid] += pair_energy(r, exp_cache);
 #endif
 }
 
@@ -241,4 +247,8 @@ void MorseForce::update_cache(const System& system, const Context& context) {
 
 double MorseForce::max_cutoff()const {
     return cutoff_global;
+}
+
+double MorseForce::potential_energy()const {
+    return vec_sum(pe_cache);
 }
