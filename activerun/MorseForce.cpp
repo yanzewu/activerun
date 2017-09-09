@@ -24,53 +24,64 @@ void MorseForce::init(const Dict& params, const System& system) {
 	}
 
 	cutoff_relative = params.get("cutoff", 1.25);
+    cutoff_global = vec_max(system.get_attr("size")) * cutoff_relative;
 
 	printf("kappa=%.5g\nUm=%.5g\ncutoff=%.4f\n", kappa, Um, cutoff_relative);
+
+#ifdef PRESSURE_BREAKDOWN
+    pressure.resize(3);
+    energy.resize(3);
+#endif 
 }
 
 void MorseForce::init_mpi(int thread_count) {
 
 	printf("Morse potential: ");
 	pool_size = thread_count;
+    int cache_size;
 	if (pool_size > 0) {
 		printf("Using %d threads\n", pool_size);
-		force_cache.resize(pool_size);
-		neigh_cache.resize(pool_size);
-        pe_cache.resize(pool_size);
+        cache_size = pool_size;
 	}
 	else {
 		printf("Using main thread\n");
-		force_cache.resize(1);
-		neigh_cache.resize(1);
-        pe_cache.resize(1);
+        cache_size = 1;
 	}
+
+	force_cache.resize(cache_size);
+	neigh_cache.resize(cache_size);
+    pe_cache.resize(cache_size);
 
 	for (auto& nc : neigh_cache) {
 		nc.reserve(64);
 	}
 
 #ifdef PRESSURE_BREAKDOWN
-    pressure_cache.resize(pool_size);
-    energy_cache.resize(pool_size);
+    pressure_cache.resize(cache_size);
+    energy_cache.resize(cache_size);
 
     for (auto& pc : pressure_cache)pc.resize(3);
     for (auto& ec : energy_cache)ec.resize(3);
-
-#endif // PRESSURE_BREAKDOWN
+#endif
 
 }
 
 void MorseForce::update_ahead(double compute_pe) {
 
-#ifdef PRESSURE_BREAKDOWN
-    if (calculate_energy) for (auto& ec : energy_cache)memset(&ec[0], 0, 3 * sizeof(double));
-    if (calculate_pressure) for (auto& pc : pressure_cache)memset(&pc[0], 0, 3 * sizeof(double));
-#endif 
 	for (auto& fc : force_cache) {
         std::fill(fc.begin(), fc.end(), Vec());
 	}
     this->calculate_energy = compute_pe;
-    if (compute_pe) vec_reset(pe_cache);
+    if (compute_pe) {
+#ifdef PRESSURE_BREAKDOWN
+        for (auto& ec : energy_cache) vec_reset(ec);
+        for (auto& pc : pressure_cache) vec_reset(pc);
+        vec_reset(pressure);
+        vec_reset(energy);
+#else
+        vec_reset(pe_cache);
+#endif 
+    }
 }
 
 void MorseForce::mp_update(FixedThreadPool& pool, const State& state, const Context& context) {
@@ -101,8 +112,10 @@ void MorseForce::update_later(std::vector<Vec>& F) {
 	}
 
 #ifdef PRESSURE_BREAKDOWN
-    if (calculate_pressure)  for (const auto& pc : pressure_cache) array_add_double(&pc[0], pressure, 3);
-    if (calculate_energy) for (const auto& ec : energy_cache) array_add_double(&ec[0], energy, 3);
+    if (calculate_energy) {
+        for (const auto& pc : pressure_cache) array_add_double(&pc[0], &pressure[0], 3);
+        for (const auto& ec : energy_cache) array_add_double(&ec[0], &energy[0], 3);
+    }
 #endif 
 }
 
@@ -190,36 +203,34 @@ void MorseForce::update_pair(size_t id1, size_t id2, const Vec& d, const State& 
 
 
 	double exp_cache = exp(-kappa * (r - sum_radius));
-	/*		if (abs(exp_cache) > 1000) {
-	fprintf(stderr, "Warning: Force too large for %d-%d, %.5g\n", id1, id2, exp_cache);
-	fprintf(stderr, "Distance is %.4f, %.4f (%.4f)\n", d[0], d[1], r);
-	fprintf(stderr, "Position is %.4f,%.4f and %.4f,%.4f\n", state.pos[id1][0], state.pos[id1][1], state.pos[id2][0], state.pos[id2][1]);
-	fprintf(stderr, "Radius is %.4f and %.4f\n", atom_radius_cache[id1], atom_radius_cache[id2]);
-	//			throw std::out_of_range("Force too large");
-	}*/
+#ifdef DEBUG_FORCE
+	if (abs(exp_cache) > 1000) {
+	    fprintf(stderr, "Warning: Force too large for %d-%d, %.5g\n", id1, id2, exp_cache);
+	    fprintf(stderr, "Distance is %.4f, %.4f (%.4f)\n", d[0], d[1], r);
+	    fprintf(stderr, "Position is %.4f,%.4f and %.4f,%.4f\n", state.pos[id1][0], state.pos[id1][1], state.pos[id2][0], state.pos[id2][1]);
+	    fprintf(stderr, "Radius is %.4f and %.4f\n", atom_radius_cache[id1], atom_radius_cache[id2]);
+	    throw std::out_of_range("Force too large");
+    }
+#endif
 	Vec f_temp = d * pair_force_div_r(r, exp_cache) / r;
 	F[id1] -= f_temp;
 	F[id2] += f_temp;
 
-#ifdef PRESSURE_BREAKDOWN
-
-    int output_id;
-    if (calculate_energy || calculate_pressure) {
-        if (group_cache[id1] && group_cache[id2])output_id = 2;
-        else if (group_cache[id1] || group_cache[id2])output_id = 1;
-        else output_id = 0;
-    }
-
-    if (calculate_pressure) {
-        pressure_cache[tid][output_id] += f_temp.dot(d);
-    }
 
     if (calculate_energy) {
+#ifdef PRESSURE_BREAKDOWN
+        int output_id;
+
+        if (group_cache[id1] && group_cache[id2])output_id = 1;
+        else if (group_cache[id1] || group_cache[id2])output_id = 2;
+        else output_id = 0;
+
         energy_cache[tid][output_id] += pair_energy(r, exp_cache);
-    }
+        pressure_cache[tid][output_id] += f_temp.dot(d);
 #else
-    if (calculate_energy) pe_cache[tid] += pair_energy(r, exp_cache);
+        pe_cache[tid] += pair_energy(r, exp_cache);
 #endif
+    }
 }
 
 double MorseForce::pair_force_div_r(double r, double exp_cache) {

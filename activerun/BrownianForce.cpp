@@ -82,3 +82,12 @@ void BrownianForce::update_cache(const System& system, const Context& context) {
 	}
 }
 
+double BrownianForce::compute_temperature(const std::vector<Vec>& force)const
+{
+    double T = 0.0;
+    for (size_t i = 0; i < force.size(); i++) {
+        T += (force[i] / force_coeff_cache[i]).norm2();
+    }
+    return T * 12 / DIMENSION / force.size();
+}
+
