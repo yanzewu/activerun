@@ -215,8 +215,6 @@ int main(int argc, char* argv[]) {
 	double swim_temperature = zeta / (2.0 * PeR * PeR) * 0.75;
 	
 	hot_brownian["temp"] = swim_temperature;
-	force_swim.init(hot_brownian, system);	
-	force_swim.group_cache = &group_swim[0];
 
 	size_t swim_num = std::count(system.atom_type.begin(), system.atom_type.end(), 1);
 
@@ -227,7 +225,9 @@ int main(int argc, char* argv[]) {
 #endif // !THREE_DIMENSION
     size_t swim_start = swim_param["swim_start"];
 	if (has_swim) {
-        force_swim.init(fix_swim_param, system);
+        //force_swim.init(fix_swim_param, system);
+		force_swim.init(hot_brownian, system);
+
         force_swim.group_cache = &group_swim[0];
 	}
 
@@ -440,7 +440,7 @@ int main(int argc, char* argv[]) {
             thermo_buffer[5] += morse_energy[0];
             thermo_buffer[6] += morse_energy[1];
             thermo_buffer[7] += vec_sum(morse_energy);
-            thermo_buffer[8] += temperature;
+            thermo_buffer[8] += swim_temperature;
 #endif // !PRESSURE_BREAKDOWN
         }  
 
