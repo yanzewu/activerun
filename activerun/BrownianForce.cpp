@@ -61,6 +61,7 @@ void BrownianForce::update(const State& state, std::vector<Vec>& force_buffer) {
 	}
 
 	for (size_t i = 0; i < force_buffer.size(); ++i) {
+		if (!group_cache[i]) continue;
 		force_buffer[i] = random_cache[i] * force_coeff_cache[i];
 	}
 }
@@ -78,6 +79,7 @@ void BrownianForce::update_cache(const System& system, const Context& context) {
 
 	const auto& zeta = system.get_attr("zeta");
 	for (size_t i = 0; i < system.atom_num; i++) {
+		if (!group_cache[i]) continue;
 		force_coeff_cache[i] = sqrt(24.0 * temperature * zeta[i] / context.timestep);
 	}
 }

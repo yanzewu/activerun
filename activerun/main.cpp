@@ -198,11 +198,30 @@ int main(int argc, char* argv[]) {
 
     BrownianForce force_brown;
 	force_brown.init(config.get_dict("BrownianForce"), system);
+	force_brown.group_cache = &group_passive[0]; // only for "cold" Brownian particles !
     
     /* fix 1 swim active [SwimForce.temp] [SwimForce.temp] 0.0 */
 
 #ifndef THREE_DIMENSION
-    SwimForce force_swim;
+    //SwimForce force_swim;
+
+	// begin
+
+	BrownianForce force_swim; // only for "hot" Brownian particles!
+	auto hot_brownian = config.get_dict("BrownianForce");
+
+	double zeta = 6 * M_PI * config.get_dict("BrownianForce")["neta"];
+	double PeR = config.get_dict("SwimForce")["PeR"];
+	double swim_temperature = zeta / (2.0 * PeR * PeR) * 0.75;
+	
+	hot_brownian["temp"] = swim_temperature;
+	force_swim.init(hot_brownian, system);	
+	force_swim.group_cache = &group_swim[0];
+
+	size_t swim_num = std::count(system.atom_type.begin(), system.atom_type.end(), 1);
+
+	// end
+
 #else
     SwimForce3d force_swim;
 #endif // !THREE_DIMENSION
@@ -399,8 +418,11 @@ int main(int argc, char* argv[]) {
             context.pbc.update_image(state.pos);
             double temperature = force_brown.compute_temperature(context.force_buffer[0]);
 
-            thermo_buffer[0] += state.pos.size() * temperature / system.volume();
+            // thermo_buffer[0] += state.pos.size() * temperature / system.volume();
             if (has_swim)thermo_buffer[1] += p_swim.compute_pressure(context, 1);
+
+			thermo_buffer[0] += (state.pos.size() - swim_num) * temperature / system.volume();
+			thermo_buffer[1] + swim_num * swim_temperature / system.volume();
 #ifndef PRESSURE_BREAKDOWN
             thermo_buffer[2] += p_morse.compute_pressure(context, state, 2);
             thermo_buffer[3] += force_morse.potential_energy();
