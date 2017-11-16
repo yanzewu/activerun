@@ -210,7 +210,7 @@ int main(int argc, char* argv[]) {
 	BrownianForce force_swim; // only for "hot" Brownian particles!
 	auto hot_brownian = config.get_dict("BrownianForce");
 
-	double zeta = 6 * M_PI * config.get_dict("BrownianForce")["neta"];
+	double zeta = 6 * M_PI * config.get_dict("BrownianForce")["neta"] * 2.0;
 	double PeR = config.get_dict("SwimForce")["PeR"];
 	double swim_temperature = zeta / (2.0 * PeR * PeR) * 0.75;
 	
@@ -417,12 +417,15 @@ int main(int argc, char* argv[]) {
         if (do_thermo_sample) {
             context.pbc.update_image(state.pos);
             double temperature = force_brown.compute_temperature(context.force_buffer[0]);
-
             // thermo_buffer[0] += state.pos.size() * temperature / system.volume();
-            if (has_swim)thermo_buffer[1] += p_swim.compute_pressure(context, 1);
+            // if (has_swim)thermo_buffer[1] += p_swim.compute_pressure(context, 1);
+
+			if (has_swim) {
+				swim_temperature = force_swim.compute_temperature(context.force_buffer[1]);
+			}
 
 			thermo_buffer[0] += (state.pos.size() - swim_num) * temperature / system.volume();
-			thermo_buffer[1] + swim_num * swim_temperature / system.volume();
+			thermo_buffer[1] += swim_num * swim_temperature / system.volume();
 #ifndef PRESSURE_BREAKDOWN
             thermo_buffer[2] += p_morse.compute_pressure(context, state, 2);
             thermo_buffer[3] += force_morse.potential_energy();

@@ -79,7 +79,6 @@ void BrownianForce::update_cache(const System& system, const Context& context) {
 
 	const auto& zeta = system.get_attr("zeta");
 	for (size_t i = 0; i < system.atom_num; i++) {
-		if (!group_cache[i]) continue;
 		force_coeff_cache[i] = sqrt(24.0 * temperature * zeta[i] / context.timestep);
 	}
 }
