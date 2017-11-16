@@ -86,6 +86,7 @@ int read_legacy_input(const char* filename, Serializer& config) {
     }
 
     config["input_file"] = std::string(filename);
+    config["global_seed"] = -1;
 
     config["BrownianForce"]["temp"] = input.kT;
     config["BrownianForce"]["neta"] = input.viscosity;
