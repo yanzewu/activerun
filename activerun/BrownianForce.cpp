@@ -61,6 +61,7 @@ void BrownianForce::update(const State& state, std::vector<Vec>& force_buffer) {
 	}
 
 	for (size_t i = 0; i < force_buffer.size(); ++i) {
+		if (!group_cache[i]) continue;
 		force_buffer[i] = random_cache[i] * force_coeff_cache[i];
 	}
 }
@@ -86,8 +87,9 @@ double BrownianForce::compute_temperature(const std::vector<Vec>& force)const
 {
     double T = 0.0;
     for (size_t i = 0; i < force.size(); i++) {
+		if (!group_cache[i]) continue;
         T += (force[i] / force_coeff_cache[i]).norm2();
     }
-    return T * 12 / DIMENSION / force.size();
+	return T * 12 / DIMENSION / std::count(group_cache, group_cache + force.size(), 1) * temperature;
 }
 
