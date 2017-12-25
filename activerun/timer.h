@@ -20,7 +20,7 @@ public:
     
     void print(int check_circles, int total_circles) {
         int64_t total_time = clock();
-        printf("\n\nTotal time: %.2fs\n", (double)total_time / CLOCKS_PER_SEC);
+        printf("\n\nTotal cpu time: %.2fs\n", (double)total_time / CLOCKS_PER_SEC);
         printf("Using %d circles for estimation:\n", check_circles);
         double scale = (double)total_circles / check_circles;
         for (size_t i = 0; i < names.size(); i++) {

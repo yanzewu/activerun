@@ -17,6 +17,7 @@ public:
     }
 
     void init(const json& thermo_param) {
+        printf("\nInitializing thermo calculations...\n\n");
         thermo_step = thermo_param["thermo_step"];          // step of thermo output
         thermo_start = thermo_param["thermo_start"];        // start of thermo to avoid inequlibrium
         thermo_sample_range = thermo_param["average_range"];// sample range around output time
@@ -24,6 +25,10 @@ public:
         thermo_sample_count = thermo_sample_range % thermo_sample_step == 0 ?
             thermo_sample_range / thermo_sample_step + 1 :
             thermo_sample_range / thermo_sample_step;       // sample number
+        printf("start from %zd\nstep=%zd\nCount every %d step within %d steps\n", thermo_start, thermo_step, thermo_sample_step, thermo_sample_range);
+        if (thermo_step <= thermo_sample_range) {
+            throw std::runtime_error("Thermo range too large");
+        }
     }
 
     void check_start(size_t step_begin){

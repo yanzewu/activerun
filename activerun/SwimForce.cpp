@@ -22,6 +22,7 @@ void SwimForce::init(const Dict& params, System& system) {
 
 	temperature = params.get("swim_temp", 1.0);
 	brownian_rotation = (bool)params.get("brownian", 1.0);
+	temperature = params.get("swim_temp", 1.0);
 	if (brownian_rotation) {
 		printf("Using brownian rotation\nrotation temperature=%.4f\n", temperature);
 	}

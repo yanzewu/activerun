@@ -320,7 +320,7 @@ int main(int argc, char* argv[]) {
 
     /* run [time.step] */
 
-	printf("\nStart running session...\n\n");
+	printf("\nRun %zd steps with timestep of %.4g...\n\n", context.total_steps - context.current_step, context.timestep);
 
     State state = state_init;
 
