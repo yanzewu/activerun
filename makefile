@@ -7,7 +7,7 @@ objects = main.o BrownianForce.o Dumper.o Input.o LangevinIntegrator.o mathutil.
 activerun : $(objects)
 	$(CXX) $(CXXFLAGS) -o activerun-dev $(objects)
 
-main.o : activerun.h Input.h Force.h Dumper.h System.h Context.h Integrator.h thermostat.h \
+main.o : Input.h Force.h Dumper.h System.h Context.h Integrator.h Thermo.h \
 	threadpool.h dict.h mathutil.h includes.h neighlist.h pbc.h vec.h dict.h dimension.h
 
 BrownianForce.o : Force.h threadpool.h dict.h mathutil.h System.h Context.h includes.h Input.h \

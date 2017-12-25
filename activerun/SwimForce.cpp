@@ -20,9 +20,9 @@ void SwimForce::init(const Dict& params, System& system) {
 	}
     printf("Rotation Peclet=%.4f\n", Pe_R[0]);
 
+	temperature = params.get("swim_temp", 1.0);
 	brownian_rotation = (bool)params.get("brownian", 1.0);
 	if (brownian_rotation) {
-		temperature = params.get("swim_temp", 1.0);
 		printf("Using brownian rotation\nrotation temperature=%.4f\n", temperature);
 	}
 	else {

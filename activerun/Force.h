@@ -53,6 +53,8 @@ public:
 
 	void update_cache(const System&, const Context&);
 
+    double compute_temperature(const std::vector<Vec>& force)const;
+
 private:
 
     std::vector<double> force_coeff_cache;
@@ -144,17 +146,17 @@ private:
 class MorseForce : public Force {
 public:
 
-	/* Fixed Data */
-
-
 #ifdef PRESSURE_BREAKDOWN
-    double pressure[3];
-    double energy[3];
+    std::vector<double> pressure;
+    std::vector<double> energy;
 
     std::vector<std::vector<double> > pressure_cache;
     std::vector<std::vector<double> > energy_cache;
 
 #endif
+
+	/* Fixed Data */
+
 
 	int pool_size;
     double cutoff_relative;
