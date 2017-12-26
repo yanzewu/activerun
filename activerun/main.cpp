@@ -165,7 +165,6 @@ int main(int argc, char* argv[]) {
 
     bool is_restart = config["is_restart"];
     std::string data_file = config["data_file"];
-    size_t step_begin = config["current_step"];
 
     /* Datafile input */
 
@@ -198,6 +197,7 @@ int main(int argc, char* argv[]) {
 
     BrownianForce force_brown;
 	force_brown.init(config.get_dict("BrownianForce"), system);
+	force_brown.group_cache = &group_passive[0];
     
     /* fix 1 swim active [SwimForce.temp] [SwimForce.temp] 0.0 */
 
@@ -226,7 +226,9 @@ int main(int argc, char* argv[]) {
     double cell_size = util_param["cell_size"];
     int np = util_param["np"];
     int neighlist_step = util_param["neighlist_step"];
+	size_t step_begin = config["current_step"];
 
+	context.current_step = step_begin;
 	context.init_timestep(time_param);
     context.init_pbc(system, true);
     context.init_neighlist(system.box, cell_size * std::max(max_pair_cutoff, max_fix_cutoff));
@@ -320,7 +322,7 @@ int main(int argc, char* argv[]) {
 
     /* run [time.step] */
 
-	printf("\nRun %zd steps with timestep of %.4g...\n\n", context.total_steps - context.current_step, context.timestep);
+	printf("\nRun %zd steps with timestep of %.4g...\n\n", context.total_steps - step_begin, context.timestep);
 
     State state = state_init;
 
