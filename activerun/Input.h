@@ -5,6 +5,7 @@
 
 
 #include "includes.h"
+#include <string>
 
 
 // LAMMPS Data File
@@ -32,10 +33,10 @@ public:
 
 
 struct RestartFile {
-    char input_name[128];
-    char data_name[128];
-    char output_name[128];
-    char thermo_name[128];
+	std::string input_name;
+	std::string data_name;
+	std::string output_name;
+	std::string thermo_name;
     size_t current_step;
 
     RestartFile() {

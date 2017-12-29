@@ -232,17 +232,17 @@ int RestartFile::read_restart(const char* filename) {
     while (!feof(file_rst)) {
         fscanf(file_rst, "%s %s\n", name, buffer);
         if (strcmp(name, "input") == 0) {
-            strcpy(input_name, buffer);
+			input_name = std::string(&buffer[0]);
         }
         else if (strcmp(name, "output") == 0) {
-            strcpy(output_name, buffer);
-        }
+			output_name = std::string(&buffer[0]);
+		}
         else if (strcmp(name, "thermo") == 0) {
-            strcpy(thermo_name, buffer);
-        }
+			thermo_name = std::string(&buffer[0]);
+		}
         else if (strcmp(name, "data") == 0) {
-            strcpy(data_name, buffer);
-        }
+			data_name = std::string(&buffer[0]);
+		}
         else if (strcmp(name, "step") == 0) {
             sscanf(buffer, "%zd", &current_step);
         }
@@ -256,10 +256,10 @@ int RestartFile::read_restart(const char* filename) {
 
 void RestartFile::write_restart(const char* filename) {
     FILE* file_rst = fopen(filename, "w");
-    fprintf(file_rst, "input %s\n", input_name);
-    fprintf(file_rst, "output %s\n", output_name);
-    fprintf(file_rst, "thermo %s\n", thermo_name);
-    fprintf(file_rst, "data %s\n", data_name);
+    fprintf(file_rst, "input %s\n", input_name.c_str());
+    fprintf(file_rst, "output %s\n", output_name.c_str());
+    fprintf(file_rst, "thermo %s\n", thermo_name.c_str());
+    fprintf(file_rst, "data %s\n", data_name.c_str());
     fprintf(file_rst, "step %zd\n", current_step);
     fclose(file_rst);
 }

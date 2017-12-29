@@ -69,6 +69,8 @@ void set_default_value(Serializer& config) {
     // restart
     config["restart"] = json({
         {"write_restart", true},
+		{"runtime_restart", true},
+		{"runtime_restart_step", 10000000},
         {"restart_file", "restart.rst"},
         {"restart_data", "restart.data"}
     });
@@ -103,22 +105,22 @@ int read_input(int argc, char* argv[], Serializer& config) {
     if (strcmp(argv[1], "-r") == 0) {
         RestartFile restart;
         restart.read_restart(argv[2]);
-        if (strncmp(restart.input_name + strlen(restart.input_name) - 4, "json", 4) == 0) {
-            config.read_file(restart.input_name);
+        if (restart.input_name.substr(restart.input_name.size() - 4, 4) == "json") {
+            config.read_file(restart.input_name.c_str());
             config["input_file"] = std::string(restart.input_name);
         }
         else {
-            return read_legacy_input(restart.input_name, config);
+            return read_legacy_input(restart.input_name.c_str(), config);
         }
 
         config["is_restart"] = true;
-        config["data_file"] = std::string(restart.data_name);
+        config["data_file"] = restart.data_name;
         config["current_step"] = restart.current_step;
 
-        config["dump"]["dump_file"] = std::string(restart.output_name);
-        if (strlen(restart.thermo_name) > 0) {
+        config["dump"]["dump_file"] = restart.output_name;
+        if (!restart.thermo_name.empty()) {
             config["thermo"]["using_thermo"] = true;
-            config["thermo"]["thermo_file"] = std::string(restart.thermo_name);
+            config["thermo"]["thermo_file"] = restart.thermo_name;
         }
         else {
             config["thermo"]["using_thermo"] = false;
@@ -176,6 +178,7 @@ int main(int argc, char* argv[]) {
 	}
 	int flush_step = log_param["flush"];
 	logger = &logger_body;
+
 
     /* Global configure variables */
 
@@ -313,6 +316,25 @@ int main(int argc, char* argv[]) {
     thermo_buffer.resize(5);
 #endif
 
+	/* Restart */
+	RestartFile restart;
+
+	bool write_restart = restart_param["write_restart"];
+	bool write_runtime_restart = restart_param["runtime_restart"];
+	int restart_step = restart_param["runtime_restart_step"];
+	std::string input_file = config["input_file"];
+	std::string restart_file = restart_param["restart_file"];
+	std::string restart_data = restart_param["restart_data"];
+
+	if (write_restart) {
+
+		restart.input_name = input_file;
+		restart.data_name = restart_data;
+		restart.output_name = dump_file;
+		restart.thermo_name = thermo_file;
+		restart.current_step = step_begin;
+	}
+
     /* timer normal every [sample_step] */
 
     Timer timer;
@@ -326,6 +348,7 @@ int main(int argc, char* argv[]) {
 
     int global_seed = config["global_seed"];
     if (global_seed == -1)global_seed = time(0);
+	logger->write_all("Global seed=%d\n", global_seed);
 	set_random_seed(global_seed);
 
     // building force cache
@@ -466,34 +489,31 @@ int main(int argc, char* argv[]) {
 			logger->flush_all();
 			trajdumper.flush();
 		}
+
+		if ((context.current_step + 1) % restart_step == 0 && write_runtime_restart) {
+
+			state.write_data(datafile);
+			datafile.write_data(restart.data_name.c_str());
+
+			restart.current_step = context.current_step + 1;
+			restart.write_restart(restart_file.c_str());
+			logger->write_all("Restart written to %s\n", restart_file.c_str());
+		}
+
     }
 
     timer.print((context.current_step - step_begin) / timer_step, context.current_step - step_begin);
 
     /* write_restart [restart_file] */
-
-    bool write_restart = restart_param["write_restart"];
-
 	if (write_restart) {
-        RestartFile restart;
-
-        std::string input_file = config["input_file"];
-        std::string restart_file = restart_param["restart_file"];
-        std::string restart_data = restart_param["restart_data"];
-
 		state.write_data(datafile);
-		datafile.write_data(restart_data.c_str());
+		datafile.write_data(restart.data_name.c_str());
 
-        restart.current_step = context.current_step;
-        strcpy(restart.data_name, restart_data.c_str());
-        strcpy(restart.input_name, input_file.c_str());
-        strcpy(restart.output_name, dump_file.c_str());
-        if (using_thermo) {
-            strcpy(restart.thermo_name, thermo_file.c_str());
-        }
-        restart.write_restart(restart_file.c_str());
+		restart.current_step = context.current_step;
+		restart.write_restart(restart_file.c_str());
 		logger->write_all("\nRestart written to %s\n", restart_file.c_str());
 	}
+
 
 	return 0;
 }
