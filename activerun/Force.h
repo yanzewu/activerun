@@ -12,6 +12,7 @@
 #include "threadpool.h"
 #include "dict.h"
 #include "mathutil.h"
+#include "resources.h"
 
 #include "System.h"
 #include "Context.h"

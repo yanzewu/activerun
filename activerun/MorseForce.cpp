@@ -12,21 +12,21 @@ MorseForce::MorseForce() {
 
 void MorseForce::init(const Dict& params, const System& system) {
 
-	printf("\nInitializing Morse potential\n\n");
+	logger->write_all("\nInitializing Morse potential\n\n");
 
 	try {
 		kappa = params.at("kappa");
 		Um = params.at("Um");
 	}
 	catch (const std::out_of_range&) {
-		printf("Error: kappa or Um not found\n");
+		fprintf(stderr, "Error: kappa or Um not found\n");
 		throw;
 	}
 
 	cutoff_relative = params.get("cutoff", 1.25);
     cutoff_global = vec_max(system.get_attr("size")) * cutoff_relative;
 
-	printf("kappa=%.5g\nUm=%.5g\ncutoff=%.4f\n", kappa, Um, cutoff_relative);
+	logger->write_all("kappa=%.5g\nUm=%.5g\ncutoff=%.4f\n", kappa, Um, cutoff_relative);
 
 #ifdef PRESSURE_BREAKDOWN
     pressure.resize(3);
@@ -36,15 +36,15 @@ void MorseForce::init(const Dict& params, const System& system) {
 
 void MorseForce::init_mpi(int thread_count) {
 
-	printf("Morse potential: ");
+	logger->write_all("Morse potential: ");
 	pool_size = thread_count;
     int cache_size;
 	if (pool_size > 0) {
-		printf("Using %d threads\n", pool_size);
+		logger->write_all("Using %d threads\n", pool_size);
         cache_size = pool_size;
 	}
 	else {
-		printf("Using main thread\n");
+		logger->write_all("Using main thread\n");
         cache_size = 1;
 	}
 

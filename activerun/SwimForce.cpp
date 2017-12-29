@@ -9,33 +9,33 @@ SwimForce::SwimForce()
 
 void SwimForce::init(const Dict& params, System& system) {
 
-	printf("\nInitializing Swim Force\n\n");
+	logger->write_all("\nInitializing Swim Force\n\n");
 
 	try {
 		Pe_R.resize(system.atom_num, params.at("PeR"));
 	}
 	catch (const std::out_of_range&) {
-		printf("Error: PeR not found\n");
+		fprintf(stderr, "Error: PeR not found\n");
 		throw;
 	}
-    printf("Rotation Peclet=%.4f\n", Pe_R[0]);
+	logger->write_all("Rotation Peclet=%.4f\n", Pe_R[0]);
 
 	temperature = params.get("swim_temp", 1.0);
 	brownian_rotation = (bool)params.get("brownian", 1.0);
 	temperature = params.get("swim_temp", 1.0);
 	if (brownian_rotation) {
-		printf("Using brownian rotation\nrotation temperature=%.4f\n", temperature);
+		logger->write_all("Using brownian rotation\nrotation temperature=%.4f\n", temperature);
 	}
 	else {
 		Pe_S.resize(system.atom_num, params.get("PeS", 1.0));
-		printf("Using self-defined rotation\nSwim Peclet=%.4f\n", params.get("PeS", 1.0));
+		logger->write_all("Using self-defined rotation\nSwim Peclet=%.4f\n", params.get("PeS", 1.0));
 	}
 
 	my_type = (int)params.get("type", 1.0);
-	printf("Swim atom type: %d\n", my_type);
+	logger->write_all("Swim atom type: %d\n", my_type);
 
 	int rand_seed = (int)params.get("init_seed", 0.0);
-	printf("Randomize initial configuration...\nseed=%d\n", rand_seed);
+	logger->write_all("Randomize initial configuration...\nseed=%d\n", rand_seed);
 	srand(rand_seed);
 
 	angle_cache.resize(system.atom_num);
@@ -50,8 +50,8 @@ void SwimForce::init(const Dict& params, System& system) {
 
 	// zeta = 6 pi eta r^2
 	if (system.attribute_names.find("zeta") == system.attribute_names.end()) {
-		printf("Damp cache not found, building...\n");
-		printf("Viscosity=%.5g\n", params.get("neta", 1.0));
+		logger->write_all("Damp cache not found, building...\n");
+		logger->write_all("Viscosity=%.5g\n", params.get("neta", 1.0));
 
 		auto& zeta = system.add_attr("zeta");
 		system.set_name("size", 2);
@@ -61,14 +61,14 @@ void SwimForce::init(const Dict& params, System& system) {
 		}
 	}
 	else {
-		printf("Using cached damp\n");
+		logger->write_all("Using cached damp\n");
 	}
 }
 
 void SwimForce::init_mpi(int thread_count) {
-	printf("Swim force: ");
+	logger->write_all("Swim force: ");
 	using_thread = thread_count > 0;
-	printf(using_thread ? "Using thread pool\n" : "Using main thread\n");
+	logger->write_all(using_thread ? "Using thread pool\n" : "Using main thread\n");
 }
 
 void SwimForce::update_ahead(State& state, std::vector<Vec>& F) {

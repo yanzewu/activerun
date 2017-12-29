@@ -1,5 +1,6 @@
 #include "Integrator.h"
 #include "arrayutil.h"
+#include "resources.h"
 
 LangevinIntegrator::LangevinIntegrator() :
 	compute_temperature(false),
@@ -13,10 +14,10 @@ LangevinIntegrator::LangevinIntegrator() :
 
 void LangevinIntegrator::init(const Dict& params, const System& system, const Context& context)
 {
-	printf("\nInitializing integrator\n\n");
+	logger->write_all("\nInitializing integrator\n\n");
 
 	compute_temperature = (bool)params.get("compute_temp", 0.0);
-	printf(compute_temperature ? "Using velocity cache for temperature\n" : "No temperature computation\n");
+	logger->write_all(compute_temperature ? "Using velocity cache for temperature\n" : "No temperature computation\n");
 
 	for (auto& fb : force_buffer) {
 		fb.resize(system.atom_num);
@@ -105,7 +106,7 @@ void LangevinIntegrator::update_cache(const System& system, const Context& conte
 
 	}
 	catch (const std::out_of_range&) {
-		printf("Error: Damp cache not found\n");
+		logger->write_all("Error: Damp cache not found\n");
 		throw;
 	}
 

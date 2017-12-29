@@ -13,18 +13,18 @@ BrownianForce::~BrownianForce() {
 
 void BrownianForce::init(const Dict& params, System& system) {
 
-	printf("\nInitializing bronwian force\n\n");
+	logger->write_all("\nInitializing bronwian force\n\n");
 
 	temperature = params.get("temp", 1.0);
-	printf("Temperature=%.5g\n", temperature);
+	logger->write_all("Temperature=%.5g\n", temperature);
 
 	force_coeff_cache.resize(system.atom_num);
 	random_cache.resize(system.atom_num);
 
 	// zeta = 6 pi eta r^2
 	if (system.attribute_names.find("zeta") == system.attribute_names.end()) {
-		printf("Damp cache not found, building...\n");
-		printf("Viscosity=%.5g\n", params.get("neta", 1.0));
+		logger->write_all("Damp cache not found, building...\n");
+		logger->write_all("Viscosity=%.5g\n", params.get("neta", 1.0));
 
 		auto& zeta = system.add_attr("zeta");
 		system.set_name("size", 2);
@@ -34,14 +34,14 @@ void BrownianForce::init(const Dict& params, System& system) {
 		}
 	}
 	else {
-		printf("Using cached damp\n");
+		logger->write_all("Using cached damp\n");
 	}
 }
 
 void BrownianForce::init_mpi(int thread_count) {
-	printf("Brownian force: ");
+	logger->write_all("Brownian force: ");
 	using_thread = thread_count > 0;
-	printf(using_thread ? "Using thread pool\n" : "Using main thread\n");
+	logger->write_all(using_thread ? "Using thread pool\n" : "Using main thread\n");
 }
 
 void BrownianForce::update_ahead(State& state, std::vector<Vec>& force_buffer) {

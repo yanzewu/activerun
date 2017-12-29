@@ -7,6 +7,7 @@
 #include "neighlist.h"
 #include "pbc.h"
 #include "threadpool.h"
+#include "resources.h"
 
 struct Context {
 	double timestep;
@@ -42,11 +43,23 @@ struct Context {
 	}
 
 	void init_neighlist(const Vec& box, double cutoff) {
+		logger->write_all("\nInitializing celllist\n\n");
+		logger->write_all("cutoff=%f\n", cutoff);
+
 		neigh_list = new NeighbourList(box, cutoff, true);
+		if (DIMENSION == 2) {
+			logger->write_all("Total %d x %d boxes\n", neigh_list->box_num[0], neigh_list->box_num[1]);
+			logger->write_all("Box size=%.4f, %.4f", neigh_list->unit[0], neigh_list->unit[1]);
+		}
+		else {
+			logger->write_all("Total %d x %d x %d boxes\n", neigh_list->box_num[0], neigh_list->box_num[1], neigh_list->box_num[2]);
+			logger->write_all("Box size=%.4f, %.4f, %.4f", neigh_list->unit[0], neigh_list->unit[1], neigh_list->unit[2]);
+		}
+		if (neigh_list->using_ghost)logger->write_all("Using ghost\n");
 	}
 
 	void init_multicore(int thread_count, int pair_force_idx) {
-		printf("\nInitialize parallel\n\n");
+		logger->write_all("\nInitialize parallel\n\n");
 
 		thread_num.resize(force_buffer.size());
 		for (size_t i = 0; i < thread_num.size(); i++) {
@@ -55,11 +68,11 @@ struct Context {
 		}
 
 		if (thread_count > 1) {
-			printf("Create pool with %d threads\n", thread_count - 1);
+			logger->write_all("Create pool with %d threads\n", thread_count - 1);
 			pool.init(thread_count - 1);
 		}
 		else {
-			printf("No pool created\n");
+			logger->write_all("No pool created\n");
 		}
 	}
 

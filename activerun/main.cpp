@@ -17,6 +17,8 @@
 #include "old_input.h"
 #endif 
 
+MultiDumper* logger;
+
 void set_default_value(Serializer& config) {
     
     // global
@@ -167,18 +169,19 @@ int main(int argc, char* argv[]) {
 
 
 	/* Logger */
-	MultiDumper logger({ stdout });
+	MultiDumper logger_body({ stdout });
 	if (log_param["name"] != "") {
 		std::string log_name = log_param["name"];
-		logger.add_file(log_name.c_str(), "w");
+		logger_body.add_file(log_name.c_str(), "w");
 	}
 	int flush_step = log_param["flush"];
+	logger = &logger_body;
 
     /* Global configure variables */
 
     bool is_restart = config["is_restart"];
     std::string data_file = config["data_file"];
-	logger.write_all(is_restart ? "Restarting...\n" : "Start new running task\n");
+	logger->write_all(is_restart ? "Restarting...\n" : "Start new running task\n");
 
     /* Datafile input */
 
@@ -301,7 +304,7 @@ int main(int argc, char* argv[]) {
     std::vector<double> thermo_buffer;
 
 #ifdef PRESSURE_BREAKDOWN
-    ThermoDumper thermodumper(thermo_file.c_str(), logger, { "P_Kinetics", "P_Swim", "P_Morse_pp", "P_Morse_aa", "P_Morse", "PE_pp", "PE_aa", "PE", "kT_Brown" }, is_restart);
+    ThermoDumper thermodumper(thermo_file.c_str(), *logger, { "P_Kinetics", "P_Swim", "P_Morse_pp", "P_Morse_aa", "P_Morse", "PE_pp", "PE_aa", "PE", "kT_Brown" }, is_restart);
     thermo_buffer.resize(9);
 #else
     /* thermo_style custom step p_brown p_swim p_morse temp */
@@ -336,7 +339,7 @@ int main(int argc, char* argv[]) {
 
     /* run [time.step] */
 
-	logger.write_all("\nRun %zd steps with timestep of %.4g...\n\n", context.total_steps - step_begin, context.timestep);
+	logger->write_all("\nRun %zd steps with timestep of %.4g...\n\n", context.total_steps - step_begin, context.timestep);
 
     State state = state_init;
 
@@ -348,6 +351,8 @@ int main(int argc, char* argv[]) {
 	        thermodumper.dump_head();
         }
     }
+
+	logger->flush_all();
 
     for (context.current_step = step_begin; context.current_step < context.total_steps; context.current_step++) {
 
@@ -455,7 +460,12 @@ int main(int argc, char* argv[]) {
             thermodumper.dump(thermo_buffer, thermocounter.last_thermo_step(context.current_step + 1));
             vec_reset(thermo_buffer);
         }
-            
+           
+		// flush
+		if ((context.current_step + 1) % flush_step == 0) {
+			logger->flush_all();
+			trajdumper.flush();
+		}
     }
 
     timer.print((context.current_step - step_begin) / timer_step, context.current_step - step_begin);
@@ -482,7 +492,7 @@ int main(int argc, char* argv[]) {
             strcpy(restart.thermo_name, thermo_file.c_str());
         }
         restart.write_restart(restart_file.c_str());
-		logger.write_all("\nRestart written to %s\n", restart_file.c_str());
+		logger->write_all("\nRestart written to %s\n", restart_file.c_str());
 	}
 
 	return 0;

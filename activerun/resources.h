@@ -7,6 +7,6 @@
 
 #include "output.h"
 
-extern MultiDumper logger;
+extern MultiDumper* logger;
 
 #endif 

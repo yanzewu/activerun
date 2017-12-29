@@ -16,6 +16,8 @@ public:
 	}
 
 	void dump(const System& system, const State& state, size_t step);
+
+	void flush();
 private:
 	Dumper m_dumper;
 };

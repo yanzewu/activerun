@@ -22,13 +22,8 @@ class NeighbourList2 {
 public:
 
     NeighbourList2(const Vec2& box, double cutoff, bool using_ghost=false) {
-		printf("\nInitializing celllist\n\n");
-
         box_num = Vec2d(box / cutoff);
-		printf("Total %d x %d boxes\n", box_num[0], box_num[1]);
-
         unit = box / box_num.to_float();
-		printf("Box size=%.4f, %.4f\n", unit[0], unit[1]);
 
 		this->using_ghost = using_ghost;
 
@@ -38,7 +33,6 @@ public:
 			box_num_real = box_num;
 		}
 		else {
-			printf("Using ghost\n");
 			cells.resize((box_num[0] + 2) * (box_num[1] + 2));
 			box_num_real = Vec2d(box_num[0] + 2, box_num[1] + 2);
 		}
@@ -128,18 +122,12 @@ class NeighbourList3 {
 public:
 
 	NeighbourList3(const Vec3& box, double cutoff, bool using_ghost = false) {
-		printf("\nInitializing celllist\n\n");
-		printf("cutoff=%f\n", cutoff);
-
 		box_num = Vec3d(box / cutoff);
         if (using_ghost && (box_num[0] == 1 || box_num[1] == 1 || box_num[2] == 1)) {
-            printf("Error: box too small\n");
+            fprintf(stderr, "Error: box too small\n");
             throw std::runtime_error("Cannot initialize neighbourlist");
         }
-		printf("Total %d x %d x %d boxes\n", box_num[0], box_num[1], box_num[2]);
-
 		unit = box / box_num.to_float();
-		printf("Box size=%.4f, %.4f, %.4f\n", unit[0], unit[1], unit[2]);
 
 		this->using_ghost = using_ghost;
 
@@ -149,7 +137,6 @@ public:
 			box_num_real = box_num;
 		}
 		else {
-			printf("Using ghost\n");
 			cells.resize((box_num[0] + 2) * (box_num[1] + 2) * (box_num[2] + 2));
 			box_num_real = Vec3d(box_num[0] + 2, box_num[1] + 2, box_num[2] + 2);
 		}

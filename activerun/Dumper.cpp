@@ -86,6 +86,10 @@ void MultiDumper::write_all(const char* str, ...) {
 	va_end(args);
 }
 
+void TrajDumper::flush() {
+	m_dumper.flush();
+}
+
 void TrajDumper::dump(const System& system, const State& state, size_t step) {
 	m_dumper.write("ITEM: TIMESTEP\n");
 	m_dumper.write("%zd\n", step);
