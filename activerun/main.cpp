@@ -420,6 +420,8 @@ int main(int argc, char* argv[]) {
                 p_morse.update_cache(system, context);
 #endif
             }
+
+			// prevent first thermo output (which might be unstable)
 			if (context.current_step - step_begin > thermocounter.step() / 2) {
 				do_thermo_sample = thermocounter.is_thermo_sample_step(context.current_step);
 				do_thermo_output = thermocounter.is_thermo_output_step(context.current_step);
