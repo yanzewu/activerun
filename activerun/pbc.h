@@ -14,6 +14,7 @@ class PBCInfo {
 public:
 
 	std::vector<Vec> image_cache;
+	std::vector<Vecd> location_cache;
 
 	bool compute_image;
 
@@ -93,7 +94,6 @@ public:
 private:
 	Vec box_cache;
 	Vec half_box_cache;
-	std::vector<Vecd> location_cache;
 
 
 };

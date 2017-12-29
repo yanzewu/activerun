@@ -299,10 +299,21 @@ int main(int argc, char* argv[]) {
 
     bool using_thermo = thermo_param["using_thermo"];
     std::string thermo_file = thermo_param["thermo_file"].get<std::string>();   // thermo output file
-    
+    bool do_thermo_sample = false;
+    bool do_thermo_output = false;
+
     ThermoCounter thermocounter;
     thermocounter.init(thermo_param);
-    thermocounter.check_start(step_begin);
+	if (step_begin > thermocounter.start_step()) {
+		try {
+			p_swim.read_restart("restart.pressure", context);
+			context.pbc.update_image(state_init.pos);
+			logger->write_all("Reading pressure restart succeeded\n");
+		}
+		catch (const std::runtime_error&) {
+			thermocounter.check_start(step_begin);			
+		}
+	}
 
     std::vector<double> thermo_buffer;
 
@@ -325,6 +336,7 @@ int main(int argc, char* argv[]) {
 	std::string input_file = config["input_file"];
 	std::string restart_file = restart_param["restart_file"];
 	std::string restart_data = restart_param["restart_data"];
+	std::string restart_pressure = "restart.pressure";
 
 	if (write_restart) {
 
@@ -341,8 +353,7 @@ int main(int argc, char* argv[]) {
     timer.init({ "NeighList", "Force", "Integrator" });
     int timer_step = timer_param["sample_step"];
 
-    bool do_thermo_sample = false;
-    bool do_thermo_output = false;
+
 
     // random seed
 
@@ -359,6 +370,7 @@ int main(int argc, char* argv[]) {
 		force_swim.update_cache(system, context);
     }
     force_morse.update_cache(system, context);
+	p_swim.update_cache(system);
 
     /* run [time.step] */
 
@@ -403,13 +415,15 @@ int main(int argc, char* argv[]) {
                 context.pbc.reset_location();
                 context.pbc.update_image(state.pos);
 
-                if (has_swim)p_swim.update_cache(system, context);
+				if (has_swim)p_swim.init_computing(context);
 #ifndef PRESSURE_BREAKDOWN
                 p_morse.update_cache(system, context);
 #endif
             }
-            do_thermo_sample = thermocounter.is_thermo_sample_step(context.current_step);
-            do_thermo_output = thermocounter.is_thermo_output_step(context.current_step);
+			if (context.current_step - step_begin > thermocounter.step() / 2) {
+				do_thermo_sample = thermocounter.is_thermo_sample_step(context.current_step);
+				do_thermo_output = thermocounter.is_thermo_output_step(context.current_step);
+			}
         }
         
         // update force
@@ -497,6 +511,8 @@ int main(int argc, char* argv[]) {
 
 			restart.current_step = context.current_step + 1;
 			restart.write_restart(restart_file.c_str());
+			p_swim.write_restart(restart_pressure.c_str(), context);
+
 			logger->write_all("Restart written to %s\n", restart_file.c_str());
 		}
 
@@ -511,6 +527,7 @@ int main(int argc, char* argv[]) {
 
 		restart.current_step = context.current_step;
 		restart.write_restart(restart_file.c_str());
+		p_swim.write_restart(restart_pressure.c_str(), context);
 		logger->write_all("\nRestart written to %s\n", restart_file.c_str());
 	}
 

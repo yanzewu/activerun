@@ -120,6 +120,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="BrownianForce.cpp" />
+    <ClCompile Include="Compute.cpp" />
     <ClCompile Include="Dumper.cpp" />
     <ClCompile Include="Input.cpp" />
     <ClCompile Include="LangevinIntegrator.cpp" />

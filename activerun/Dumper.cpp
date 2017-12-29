@@ -6,12 +6,20 @@
 
 #define FORMATTER "% .6g"
 
-void sprintf_vec(char* buffer, const Vec2& v) {
-	sprintf(buffer, "% .5g % .5g", v[0], v[1]);
+int sprintf_vec(char* buffer, const Vec2& v) {
+	return sprintf(buffer, "% .5g % .5g", v[0], v[1]);
 }
 
-void sprintf_vec(char* buffer, const Vec3& v) {
-	sprintf(buffer, "% .5g % .5g % .5g", v[0], v[1], v[2]);
+int sprintf_vec(char* buffer, const Vec3& v) {
+	return sprintf(buffer, "% .5g % .5g % .5g", v[0], v[1], v[2]);
+}
+
+int sprintf_vecd(char* buffer, const Vec2d& v) {
+	return sprintf(buffer, "%d %d", v[0], v[1]);
+}
+
+int sprintf_vecd(char* buffer, const Vec3d& v) {
+	return sprintf(buffer, "%d %d %d", v[0], v[1], v[2]);
 }
 
 void foprintf(FILE* file, const char* str, ...) {

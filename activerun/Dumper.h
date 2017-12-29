@@ -49,4 +49,5 @@ void dump_snapshot(const State& state, const Context& context, const char* name=
 
 void dump_xyz(const State& state, const char* name);
 
+
 #endif // !ACTIVERUN_DUMPER

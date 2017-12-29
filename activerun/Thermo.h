@@ -48,7 +48,7 @@ public:
     }
 
     bool is_thermo_sample_step(size_t step)const {
-        if (step >= thermo_start + (thermo_sample_range + 1) / 2) {
+        if (step > thermo_start + (thermo_sample_range + 1) / 2) {
             int step_overhead = (step + (thermo_sample_range + 1) / 2 - thermo_start) % thermo_step;
             return (step_overhead <= thermo_sample_range) & (step_overhead % thermo_sample_step == 0);
         }
@@ -58,7 +58,7 @@ public:
     }
 
     bool is_thermo_output_step(size_t step)const {
-        if (step >= thermo_start + (thermo_sample_range + 1) / 2) {
+        if (step > thermo_start + (thermo_sample_range + 1) / 2) {
             int step_overhead = (step + (thermo_sample_range + 1) / 2 - thermo_start) % thermo_step;
             return (step_overhead == thermo_sample_range);
         }
@@ -70,6 +70,14 @@ public:
     size_t last_thermo_step(size_t step)const {
         return (step / thermo_step) * thermo_step;
     }
+
+	size_t start_step()const {
+		return thermo_start;
+	}
+
+	size_t step()const {
+		return thermo_step;
+	}
 
 private:
     size_t thermo_step;
