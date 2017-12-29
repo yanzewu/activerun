@@ -4,53 +4,32 @@
 #define ACTIVERUN_DUMPER
 
 #include "includes.h"
+#include "output.h"
 #include "System.h"
 #include "Context.h"
 
-class Dumper {
+class TrajDumper {
 public:
-    FILE* ofile;
 
-    Dumper(const char* filename, const char* mode="w") {
-        ofile = fopen(filename, mode);
-        if (!ofile) {
-            fprintf(stderr, "Cannot open %s", filename);
-        }
-    }
-
-	Dumper(FILE* file) : ofile(file) {
+	TrajDumper(const char* filename, bool is_restart = false) : m_dumper(filename, is_restart ? "a" : "w") {
 
 	}
 
-    void write(const char* str) {
-        fprintf(ofile, str);
-    }
-
-    ~Dumper() {
-        fclose(ofile);
-    }
-};
-
-class TrajDumper : public Dumper {
-public:
-
-    TrajDumper(const char* filename, bool is_restart=false) : Dumper(filename, is_restart ? "a":"w") {
-
-    }
-
 	void dump(const System& system, const State& state, size_t step);
+private:
+	Dumper m_dumper;
 };
 
-class LineDumper : public Dumper {
+
+class ThermoDumper {
 public:
 
 
-    LineDumper(const char* filename, const std::vector<std::string>& dump_names, bool with_output=false, bool is_restart=false) : 
-        Dumper(filename, is_restart ? "a":"w"),
-        dump_names(dump_names),
-		with_output(with_output)
+	ThermoDumper(const char* filename, const MultiDumper& logfile, const std::vector<std::string>& dump_names, bool is_restart=false) :
+		m_dumper(logfile),
+        dump_names(dump_names)
 		{
-
+		m_dumper.add_file(filename, is_restart ? "a" : "w");
     }
 
 	void dump_head();
@@ -58,7 +37,9 @@ public:
 	void dump(const std::vector<double>& value, const size_t& step);
     
     std::vector<std::string> dump_names;
-	bool with_output;
+	
+private:
+	MultiDumper m_dumper;
 };
 
 // used in error handling

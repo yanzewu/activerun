@@ -95,9 +95,6 @@
     <ClInclude Include="Serializer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="arrayutil.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="defines.h">
       <Filter>util</Filter>
     </ClInclude>
@@ -115,6 +112,15 @@
     </ClInclude>
     <ClInclude Include="vecutil.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="resources.h">
+      <Filter>util</Filter>
+    </ClInclude>
+    <ClInclude Include="output.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="arrayutil.h">
+      <Filter>util</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -24,6 +24,10 @@ void set_default_value(Serializer& config) {
     config["is_restart"] = false;
     config["global_seed"] = 0;
     config["current_step"] = 0;
+	config["log"] = json({
+		{"name", "log.activerun" },
+		{"flush", 100000 }
+	});
 
     // run
     config["run"] = json({
@@ -147,7 +151,7 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-
+	json log_param = config["log"];
     json util_param = config["util"];
     json dump_param = config["dump"];
     json thermo_param = config["thermo"];
@@ -161,10 +165,20 @@ int main(int argc, char* argv[]) {
     Dict integrator_param = { { "compute_temp", config["thermo"]["using_thermo"] && config["thermo"]["compute_temp"] ? 1.0 : 0.0 } };
     Dict time_param = config.get_dict("run");
 
+
+	/* Logger */
+	MultiDumper logger({ stdout });
+	if (log_param["name"] != "") {
+		std::string log_name = log_param["name"];
+		logger.add_file(log_name.c_str(), "w");
+	}
+	int flush_step = log_param["flush"];
+
     /* Global configure variables */
 
     bool is_restart = config["is_restart"];
     std::string data_file = config["data_file"];
+	logger.write_all(is_restart ? "Restarting...\n" : "Start new running task\n");
 
     /* Datafile input */
 
@@ -287,7 +301,7 @@ int main(int argc, char* argv[]) {
     std::vector<double> thermo_buffer;
 
 #ifdef PRESSURE_BREAKDOWN
-    LineDumper thermodumper(thermo_file.c_str(), { "P_Kinetics", "P_Swim", "P_Morse_pp", "P_Morse_aa", "P_Morse", "PE_pp", "PE_aa", "PE", "kT_Brown" }, true, is_restart);
+    ThermoDumper thermodumper(thermo_file.c_str(), logger, { "P_Kinetics", "P_Swim", "P_Morse_pp", "P_Morse_aa", "P_Morse", "PE_pp", "PE_aa", "PE", "kT_Brown" }, is_restart);
     thermo_buffer.resize(9);
 #else
     /* thermo_style custom step p_brown p_swim p_morse temp */
@@ -322,7 +336,7 @@ int main(int argc, char* argv[]) {
 
     /* run [time.step] */
 
-	printf("\nRun %zd steps with timestep of %.4g...\n\n", context.total_steps - step_begin, context.timestep);
+	logger.write_all("\nRun %zd steps with timestep of %.4g...\n\n", context.total_steps - step_begin, context.timestep);
 
     State state = state_init;
 
@@ -468,7 +482,7 @@ int main(int argc, char* argv[]) {
             strcpy(restart.thermo_name, thermo_file.c_str());
         }
         restart.write_restart(restart_file.c_str());
-		printf("\nRestart written to %s\n", restart_file.c_str());
+		logger.write_all("\nRestart written to %s\n", restart_file.c_str());
 	}
 
 	return 0;

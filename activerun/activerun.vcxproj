@@ -144,7 +144,9 @@
     <ClInclude Include="mathutil.h" />
     <ClInclude Include="neighlist.h" />
     <ClInclude Include="old_input.h" />
+    <ClInclude Include="output.h" />
     <ClInclude Include="pbc.h" />
+    <ClInclude Include="resources.h" />
     <ClInclude Include="Serializer.h" />
     <ClInclude Include="System.h" />
     <ClInclude Include="Thermo.h" />

@@ -25,24 +25,85 @@ void foprintf(FILE* file, const char* str, ...) {
 	fprintf(file, "%s", buffer);
 }
 
+Dumper::Dumper(const char* filename, const char* mode) {
+	ofile = fopen(filename, mode);
+	if (!ofile) {
+		fprintf(stderr, "Cannot open %s", filename);
+		throw std::runtime_error("IO Error");
+	}
+}
+
+void Dumper::flush() {
+	fflush(ofile);
+}
+
+int Dumper::write(const char* str, ...) {
+
+	va_list args;
+	va_start(args, str);
+	int ret = vfprintf(ofile, str, args);
+	va_end(args);
+	return ret;
+}
+
+MultiDumper::MultiDumper(const std::vector<const char*> filenames, const char* mode) {
+	for (const auto& filename : filenames) {
+		FILE* ofile = fopen(filename, mode);
+		if (!ofile) {
+			fprintf(stderr, "Cannot open %s", filename);
+			throw std::runtime_error("IO Error");
+		}
+		ofiles.push_back(ofile);
+	}
+}
+
+void MultiDumper::add_file(const char* filename, const char* mode) {
+	FILE* ofile = fopen(filename, mode);
+	if (!ofile) {
+		fprintf(stderr, "Cannot open %s", filename);
+		throw std::runtime_error("IO Error");
+	}
+	ofiles.push_back(ofile);
+}
+
+void MultiDumper::add_file(FILE* file) {
+	ofiles.push_back(file);
+}
+
+void MultiDumper::flush_all() {
+	for (const auto& ofile : ofiles) {
+		fflush(ofile);
+	}
+}
+
+void MultiDumper::write_all(const char* str, ...) {
+	va_list args;
+	va_start(args, str);
+	
+	for (const auto& ofile : ofiles) {
+		vfprintf(ofile, str, args);
+	}
+	va_end(args);
+}
+
 void TrajDumper::dump(const System& system, const State& state, size_t step) {
-	fprintf(ofile, "ITEM: TIMESTEP\n");
-	fprintf(ofile, "%zd\n", step);
-	fprintf(ofile, "ITEM: NUMBER OF ATOMS\n");
-	fprintf(ofile, "%zd\n", system.atom_num);
-	fprintf(ofile, "ITEM: BOX BOUNDS\n");
-	fprintf(ofile, "0 %f\n", system.box[0]);
-	fprintf(ofile, "0 %f\n", system.box[1]);
+	m_dumper.write("ITEM: TIMESTEP\n");
+	m_dumper.write("%zd\n", step);
+	m_dumper.write("ITEM: NUMBER OF ATOMS\n");
+	m_dumper.write("%zd\n", system.atom_num);
+	m_dumper.write("ITEM: BOX BOUNDS\n");
+	m_dumper.write("0 %f\n", system.box[0]);
+	m_dumper.write("0 %f\n", system.box[1]);
 #ifdef THREE_DIMENSION
-	fprintf(ofile, "0 %f\n", system.box[2]);
+	m_dumper.write("0 %f\n", system.box[2]);
 #else
-	fprintf(ofile, "-0.25 0.25\n");
+	m_dumper.write("-0.25 0.25\n");
 #endif // THREE_DIMENSION
 
-	fprintf(ofile, "ITEM: ATOMS id mol type x y z\n");
+	m_dumper.write("ITEM: ATOMS id mol type x y z\n");
 	for (int i = 0; i < system.atom_num; ++i) {
 #ifdef THREE_DIMENSION
-		fprintf(ofile, "%i %i %i %f %f %f\n",
+		m_dumper.write("%i %i %i %f %f %f\n",
 			i + 1,
 			system.atom_group[i],
 			system.atom_type[i],
@@ -51,7 +112,7 @@ void TrajDumper::dump(const System& system, const State& state, size_t step) {
 			state.pos[i][2]);
 
 #else
-		fprintf(ofile, "%i %i %i %f %f 0\n",
+		m_dumper.write("%i %i %i %f %f 0\n",
 			i + 1,
 			system.atom_group[i],
 			system.atom_type[i],
@@ -62,38 +123,20 @@ void TrajDumper::dump(const System& system, const State& state, size_t step) {
 	}
 }
 
-void LineDumper::dump_head() {
-	if (with_output) {
-		foprintf(ofile, "step");
-		for (const auto& name : dump_names) {
-			foprintf(ofile, "\t%s", name.c_str());
-		}
-        foprintf(ofile, "\n");
+void ThermoDumper::dump_head() {
+	m_dumper.write_all("step");
+	for (const auto& name : dump_names) {
+		m_dumper.write_all("\t%s", name.c_str());
 	}
-	else {
-		fprintf(ofile, "step");
-		for (const auto& name : dump_names) {
-			fprintf(ofile, "\t%s", name.c_str());
-		}
-        fprintf(ofile, "\n");
-	}
+    m_dumper.write_all("\n");
 }
 
-void LineDumper::dump(const std::vector<double>& value, const size_t& step) {
-	if (with_output) {
-		foprintf(ofile, "%zd", step);
-		for (const auto& v : value) {
-			foprintf(ofile, "\t" FORMATTER, v);
-		}
-        foprintf(ofile, "\n");
+void ThermoDumper::dump(const std::vector<double>& value, const size_t& step) {
+	m_dumper.write_all("%zd", step);
+	for (const auto& v : value) {
+		m_dumper.write_all("\t" FORMATTER, v);
 	}
-	else {
-		fprintf(ofile, "%zd", step);
-		for (const auto& v : value) {
-			fprintf(ofile, "\t" FORMATTER, v);
-		}
-        fprintf(ofile, "\n");
-	}
+	m_dumper.write_all("\n");
 }
 
 /* Error dump */
