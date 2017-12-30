@@ -26,6 +26,9 @@ void FixPressureComputer::init_computing(const Context& context) {
 
 void FixPressureComputer::read_restart(const char* filename, Context& context) {
 	FILE* ifile = fopen(filename, "r");
+	if (ifile == NULL) {
+		throw std::runtime_error("Cannot open file");
+	}
 	init_pos.resize(context.pbc.location_cache.size());
 	
 	for (size_t i = 0; i < context.pbc.location_cache.size(); i++){
