@@ -179,7 +179,7 @@ int DataFile::write_data(const char * filename)
 {
 	FILE* file_data = fopen(filename, "w");
 	if (!file_data) {
-		fprintf(stderr, "Cannot open output\n");
+		fprintf(stderr, "Cannot open output%s\n", filename);
 		throw std::runtime_error("IO Error");
 	}
 	fprintf(file_data, "LAMMPS Data File\n\n");

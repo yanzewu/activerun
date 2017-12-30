@@ -87,11 +87,12 @@ void MultiDumper::flush_all() {
 void MultiDumper::write_all(const char* str, ...) {
 	va_list args;
 	va_start(args, str);
-	
+	char buffer[256];
+    vsprintf(buffer, str, args); // do NOT modify me!
+    va_end(args);
 	for (const auto& ofile : ofiles) {
-		vfprintf(ofile, str, args);
+		fprintf(ofile, buffer);
 	}
-	va_end(args);
 }
 
 void TrajDumper::flush() {
