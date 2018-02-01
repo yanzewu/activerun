@@ -204,6 +204,7 @@ int main(int argc, char* argv[]) {
     bool has_swim = std::count(system.atom_type.begin(), system.atom_type.end(), 1) > 0;
     std::vector<int> group_swim(system.atom_num, 0);
     std::vector<int> group_passive(system.atom_num, 0);
+	std::vector<int> group_brown(system.atom_num, 1);
     for (size_t i = 0; i < system.atom_num; i++) {
         group_swim[i] = system.atom_type[i] == 1 ? 1 : 0;
         group_passive[i] = group_swim[i] ? 0 : 1;
@@ -217,7 +218,7 @@ int main(int argc, char* argv[]) {
 
     BrownianForce force_brown;
 	force_brown.init(config.get_dict("BrownianForce"), system);
-	force_brown.group_cache = &group_passive[0];
+	force_brown.group_cache = &group_brown[0];
     
     /* fix 1 swim active [SwimForce.temp] [SwimForce.temp] 0.0 */
 
