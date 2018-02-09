@@ -202,7 +202,6 @@ int main(int argc, char* argv[]) {
     
     /* fix 1 swim active [SwimForce.temp] [SwimForce.temp] 0.0 */
 
-#ifndef THREE_DIMENSION
     //SwimForce force_swim;
 
 	// begin
@@ -212,7 +211,16 @@ int main(int argc, char* argv[]) {
 
 	double zeta = 6 * M_PI * config.get_dict("BrownianForce")["neta"] * 2.0;
 	double PeR = config.get_dict("SwimForce")["PeR"];
-	double swim_temperature = zeta / (2.0 * PeR * PeR) * 0.75;
+    bool thermo_rot = config.get_dict("SwimForce")["brownian"];
+    double PeS;
+    double kT_ref = config.get_dict("SwimForce")["swim_temp"];
+    if (thermo_rot){
+        PeS = 0.75 / PeR;
+    }
+    else{
+        PeS = config.get_dict("SwimForce")["PeS"];
+    }
+	double swim_temperature = zeta * PeS / (2.0 * PeR) * kT_ref;
 	
 	hot_brownian["temp"] = swim_temperature;
 
@@ -220,9 +228,6 @@ int main(int argc, char* argv[]) {
 
 	// end
 
-#else
-    SwimForce3d force_swim;
-#endif // !THREE_DIMENSION
     size_t swim_start = swim_param["swim_start"];
 	if (has_swim) {
         //force_swim.init(fix_swim_param, system);
