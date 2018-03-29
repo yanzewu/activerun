@@ -154,6 +154,12 @@ public:
     std::vector<std::vector<double> > pressure_cache;
     std::vector<std::vector<double> > energy_cache;
 
+#ifdef VIRIAL
+	bool virial_step;
+	std::vector<double> virial;
+	std::vector<std::vector<double> > virial_cache;
+#endif
+
 #endif
 
 	/* Fixed Data */

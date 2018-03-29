@@ -11,3 +11,4 @@
 #define READ_LEGACY_INPUT   // enables legacy input file
 #define PRESSURE_BREAKDOWN  // calculating breakdown pressure
 #define USING_PBC           // using pbc
+#define VIRIAL				// compute virial

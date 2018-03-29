@@ -61,6 +61,13 @@ void set_default_value(Serializer& config) {
         {"compute_temp", true}
     });
 
+#ifdef VIRIAL
+	config["virial"] = json({
+		{"virial_file", "virial.output"},
+		{"virial_step", 10000}
+	});
+#endif
+
     // time
     config["timer"] = json({
         {"sample_step", 100}
@@ -321,6 +328,16 @@ int main(int argc, char* argv[]) {
 #ifdef PRESSURE_BREAKDOWN
     ThermoDumper thermodumper(thermo_file.c_str(), *logger, { "P_Kinetics", "P_Swim", "P_Morse_pp", "P_Morse_aa", "P_Morse", "PE_pp", "PE_aa", "PE", "kT_Brown" }, is_restart);
     thermo_buffer.resize(9);
+
+#ifdef VIRIAL
+	auto virial_param = config["virial"];
+	std::string virial_file = virial_param["virial_file"].get<std::string>();
+	int virial_step = virial_param["virial_step"].get<int>();
+	std::vector<double> virial_buffer;
+	virial_buffer.resize(system.atom_num);
+	FILE* virial_output = fopen(virial_file.c_str(), "w");
+#endif // VIRIAL
+
 #else
     /* thermo_style custom step p_brown p_swim p_morse temp */
 
@@ -353,8 +370,6 @@ int main(int argc, char* argv[]) {
     Timer timer;
     timer.init({ "NeighList", "Force", "Integrator" });
     int timer_step = timer_param["sample_step"];
-
-
 
     // random seed
 
@@ -408,6 +423,13 @@ int main(int argc, char* argv[]) {
 			}
 			context.neigh_list->build_from_pos(state.pos);
 		}
+
+#ifdef VIRIAL
+		if (context.current_step % virial_step == 0) {
+			force_morse.virial_step = true;
+		}
+#endif // VIRIAL
+
 
         // test if it's a thermo step (then need to calculate energy, pe)
 
@@ -493,6 +515,16 @@ int main(int argc, char* argv[]) {
             trajdumper.dump(system, state, context.current_step + 1);
         }
 
+#ifdef VIRIAL
+		if (context.current_step % virial_step == 0) {
+			fprintf(virial_output, "%d", context.current_step);
+			for (size_t i = 0; i < force_morse.virial.size(); i++) {
+				fprintf(virial_output, " %f", force_morse.virial[i] / virial_step);
+			}
+			fprintf(virial_output, "\n");
+		}
+#endif 
+
         // thermo
 
         if (do_thermo_output) {
@@ -520,6 +552,11 @@ int main(int argc, char* argv[]) {
 		}
 
     }
+
+#ifdef VIRIAL
+	fclose(virial_output);
+#endif // VIRIAL
+
 
     timer.print((context.current_step - step_begin) / timer_step, context.current_step - step_begin);
 

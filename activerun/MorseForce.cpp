@@ -31,6 +31,10 @@ void MorseForce::init(const Dict& params, const System& system) {
 #ifdef PRESSURE_BREAKDOWN
     pressure.resize(3);
     energy.resize(3);
+#ifdef VIRIAL
+	virial.resize(system.atom_num);
+#endif
+
 #endif 
 }
 
@@ -62,6 +66,12 @@ void MorseForce::init_mpi(int thread_count) {
 
     for (auto& pc : pressure_cache)pc.resize(3);
     for (auto& ec : energy_cache)ec.resize(3);
+
+#ifdef VIRIAL
+	virial_cache.resize(cache_size);
+	for (auto& vc : virial_cache) vc.resize(virial.size());
+#endif
+
 #endif
 
 }
@@ -81,7 +91,10 @@ void MorseForce::update_ahead(double compute_pe) {
 #else
         vec_reset(pe_cache);
 #endif 
-    }
+	}
+#ifdef VIRIAL
+	if (virial_step) vec_reset(virial);
+#endif    
 }
 
 void MorseForce::mp_update(FixedThreadPool& pool, const State& state, const Context& context) {
@@ -110,6 +123,13 @@ void MorseForce::update_later(std::vector<Vec>& F) {
 	for (const auto& fc : force_cache) {
 		array_add(fc, F);
 	}
+#ifdef VIRIAL
+	if (virial_step) {
+		for (const auto& vc : virial_cache) array_add_double(&vc[0], &virial[0], virial.size());
+		for (auto& vc : virial_cache) vec_reset(vc);
+		virial_step = false;
+	}
+#endif // VIRIAL
 
 #ifdef PRESSURE_BREAKDOWN
     if (calculate_energy) {
@@ -216,6 +236,11 @@ void MorseForce::update_pair(size_t id1, size_t id2, const Vec& d, const State& 
 	F[id1] -= f_temp;
 	F[id2] += f_temp;
 
+#ifdef VIRIAL
+	double v = f_temp.dot(d); // virial
+	virial_cache[tid][id1] += v;
+	virial_cache[tid][id2] += v;
+#endif
 
     if (calculate_energy) {
 #ifdef PRESSURE_BREAKDOWN
@@ -227,6 +252,7 @@ void MorseForce::update_pair(size_t id1, size_t id2, const Vec& d, const State& 
 
         energy_cache[tid][output_id] += pair_energy(r, exp_cache);
         pressure_cache[tid][output_id] += f_temp.dot(d);
+
 #else
         pe_cache[tid] += pair_energy(r, exp_cache);
 #endif
